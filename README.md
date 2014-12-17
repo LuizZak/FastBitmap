@@ -49,8 +49,8 @@ Results: FastBitmap **6,21x** faster
 Results: FastBitmap **4,58x** faster  
 
 **Bitmap copying profiling**  
-1024 x 1024 Bitmap SetPixel: 2888ms
-1024 x 1024 FastBitmap CopyPixels: 5ms
+1024 x 1024 Bitmap SetPixel: 2888ms  
+1024 x 1024 FastBitmap CopyPixels: 5ms  
 
 Results: FastBitmap **577,60x** faster
 
