@@ -32,7 +32,7 @@ Editing pixels of a bitmap is just as easy as:
 Speed
 ------
 
-The following profiling tests 
+The following profiling tests showcase comparisions with the native System.Drawing.Bitmap equivalent method calls
 
 **SetPixel profiling**  
 1024 x 1024 Bitmap         SetPixel: 2054ms  
