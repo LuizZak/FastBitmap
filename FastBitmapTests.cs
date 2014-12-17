@@ -3,7 +3,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace PixelariaTests.PixelariaTests.Tests.Utils
+namespace FastBitmap.Utils
 {
     /// <summary>
     /// Contains tests for the FastBitmap class and related components
