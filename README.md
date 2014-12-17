@@ -9,7 +9,20 @@ Editing pixels of a bitmap is just as easy as:
 
 ```C#
     Bitmap bitmap = new Bitmap(64, 64);
-    FastBitmap fastBitmap = new FastBitmap(bitmap);
+    
+    using(var fastBitmap = bitmap.FastLock())
+    {
+        // Do your changes here...
+        fastBitmap.Clear(Color.White);
+        fastBitmap.SetPixel(1, 1, Color.Red);
+    }
+```
+
+Or alternatively, albeit longer:
+
+```C#
+    Bitmap bitmap = new Bitmap(64, 64);
+    FastBitmap fastBitmap = new FastBitmap(bitmap)
     
     // Locking bitmap before doing operations
     fastBitmap.Lock();
