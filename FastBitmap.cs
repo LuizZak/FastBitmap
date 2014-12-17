@@ -432,34 +432,7 @@ namespace FastBitmap
             fastSource.Lock(ImageLockMode.ReadOnly);
             fastTarget.Lock();
 
-            // Simply copy the argb values array
-            int *s0s = fastSource._scan0;
-            int *s0t = fastTarget._scan0;
-
-            // Defines the ammount of assignments that the main while() loop is performing per loop.
-            // The value specified here must match the number of assignment statements inside that loop
-            const int assignsPerLoop = 8;
-
-            int count = fastSource._width * fastSource._height;
-            int rem = count % assignsPerLoop;
-            count /= assignsPerLoop;
-
-            while (count-- > 0)
-            {
-                *(s0t++) = *(s0s++);
-                *(s0t++) = *(s0s++);
-                *(s0t++) = *(s0s++);
-                *(s0t++) = *(s0s++);
-
-                *(s0t++) = *(s0s++);
-                *(s0t++) = *(s0s++);
-                *(s0t++) = *(s0s++);
-                *(s0t++) = *(s0s++);
-            }
-            while (rem-- > 0)
-            {
-                *(s0t++) = *(s0s++);
-            }
+            memcpy(fastTarget.Scan0, fastSource.Scan0, (ulong)(fastSource.Height * fastSource._strideWidth * BytesPerPixel));
 
             fastSource.Unlock();
             fastTarget.Unlock();
@@ -517,5 +490,9 @@ namespace FastBitmap
 
             fastTarget.Unlock();
         }
+        
+        // .NET wrapper to native call of 'memcpy'. Requires Microsoft Visual C++ Runtime installed
+        [DllImport("msvcrt.dll", EntryPoint = "memcpy", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
+        public static extern IntPtr memcpy(IntPtr dest, IntPtr src, ulong count);
     }
 }
