@@ -35,6 +35,11 @@ namespace FastBitmap
     public unsafe class FastBitmap
     {
         /// <summary>
+        /// Specifies the number of bytes available per pixel of the bitmap object being manipulated
+        /// </summary>
+        private const int BytesPerPixel = 4;
+        
+        /// <summary>
         /// The Bitmap object encapsulated on this FastBitmap
         /// </summary>
         private readonly Bitmap _bitmap;
@@ -47,12 +52,12 @@ namespace FastBitmap
         /// <summary>
         /// The stride of the bitmap
         /// </summary>
-        private int _strideWidth;
+        private readonly int _strideWidth;
 
         /// <summary>
         /// The first pixel of the bitmap
         /// </summary>
-        private int *_scan0;
+        private readonly int *_scan0;
 
         /// <summary>
         /// Whether the current bitmap is locked
@@ -112,10 +117,10 @@ namespace FastBitmap
 
                 // Declare an array to hold the bytes of the bitmap
                 int bytes = Math.Abs(_bitmapData.Stride) * _bitmap.Height;
-                int[] argbValues = new int[bytes / 4];
+                int[] argbValues = new int[bytes / BytesPerPixel];
 
                 // Copy the RGB values into the array
-                Marshal.Copy(_bitmapData.Scan0, argbValues, 0, bytes / 4);
+                Marshal.Copy(_bitmapData.Scan0, argbValues, 0, bytes / BytesPerPixel);
 
                 if (unlockAfter)
                 {
@@ -189,7 +194,7 @@ namespace FastBitmap
             _bitmapData = _bitmap.LockBits(rect, lockMode, _bitmap.PixelFormat);
 
             _scan0 = (int*)_bitmapData.Scan0;
-            _strideWidth = _bitmapData.Stride / 4;
+            _strideWidth = _bitmapData.Stride / BytesPerPixel;
 
             _locked = true;
         }
@@ -334,9 +339,12 @@ namespace FastBitmap
             int count = _width * _height;
             int* curScan = _scan0;
 
-            int rem = count % 8;
+            // Defines the ammount of assignments that the main while() loop is performing per loop.
+            // The value specified here must match the number of assignment statements inside that loop
+            const int assignsPerLoop = 8;
 
-            count /= 8;
+            int rem = count % assignsPerLoop;
+            count /= assignsPerLoop;
 
             while (count-- > 0)
             {
@@ -428,12 +436,13 @@ namespace FastBitmap
             int *s0s = fastSource._scan0;
             int *s0t = fastTarget._scan0;
 
-            const int bpp = 1; // Bytes per pixel
+            // Defines the ammount of assignments that the main while() loop is performing per loop.
+            // The value specified here must match the number of assignment statements inside that loop
+            const int assignsPerLoop = 8;
 
-            int count = fastSource._width * fastSource._height * bpp;
-            int rem = count % 8;
-
-            count /= 8;
+            int count = fastSource._width * fastSource._height;
+            int rem = count % assignsPerLoop;
+            count /= assignsPerLoop;
 
             while (count-- > 0)
             {
