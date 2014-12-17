@@ -54,4 +54,5 @@ Results: FastBitmap **506,33x** faster
 **Bitmap clearing profiling**  
 1024 x 1024 Bitmap     SetPixel: 1795ms  
 1024 x 1024 FastBitmap Clear:    5ms  
+
 Results: FastBitmap **359,00x** faster  
