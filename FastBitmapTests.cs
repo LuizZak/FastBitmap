@@ -229,7 +229,7 @@ namespace FastBitmap.Utils
         {
             Bitmap bitmap1 = new Bitmap(64, 64);
             Bitmap bitmap2 = new Bitmap(64, 64);
-            
+
             FastBitmap fastBitmap1 = new FastBitmap(bitmap1);
             fastBitmap1.Lock();
 
@@ -291,6 +291,8 @@ namespace FastBitmap.Utils
             }
         }
 
+        #region CopyRegion Tests
+
         /// <summary>
         /// Tests the CopyRegion() static and instance methods by creating two bitmaps, copying regions over from one to another, and comparing the expected pixel equalities
         /// </summary>
@@ -305,15 +307,7 @@ namespace FastBitmap.Utils
 
             FastBitmap.CopyRegion(copyBitmap, canvasBitmap, sourceRectangle, targetRectangle);
 
-            for (int y = targetRectangle.Y; y < Math.Min(sourceRectangle.Height, targetRectangle.Height); y++)
-            {
-                for (int x = targetRectangle.X; x < Math.Min(sourceRectangle.Width, targetRectangle.Width); x++)
-                {
-                    Assert.AreEqual(canvasBitmap.GetPixel(x, y).ToArgb(),
-                        copyBitmap.GetPixel(x - targetRectangle.X, y - targetRectangle.Y).ToArgb(),
-                        "Pixels of the target region must fully match the pixels from the origin region");
-                }
-            }
+            AssertCopyRegionEquals(canvasBitmap, copyBitmap, targetRectangle, sourceRectangle);
         }
 
         /// <summary>
@@ -331,22 +325,7 @@ namespace FastBitmap.Utils
 
             FastBitmap.CopyRegion(copyBitmap, canvasBitmap, sourceRectangle, targetRectangle);
 
-            for (int y = targetRectangle.Y; y < Math.Min(sourceRectangle.Height, targetRectangle.Height); y++)
-            {
-                for (int x = targetRectangle.X; x < Math.Min(sourceRectangle.Width, targetRectangle.Width); x++)
-                {
-                    // Ignore pixels out of range
-                    if (x < 0 || y < 0 || x >= canvasBitmap.Width ||
-                        x >= copyBitmap.Width + targetRectangle.X - sourceRectangle.X ||
-                        y >= canvasBitmap.Height || y >= copyBitmap.Height + targetRectangle.Y - sourceRectangle.Y)
-                        continue;
-
-                    Assert.AreEqual(canvasBitmap.GetPixel(x, y).ToArgb(),
-                        copyBitmap.GetPixel(x - targetRectangle.X + sourceRectangle.X,
-                            y - targetRectangle.Y + sourceRectangle.Y).ToArgb(),
-                        "Pixels of the target region must fully match the pixels from the origin region");
-                }
-            }
+            AssertCopyRegionEquals(canvasBitmap, copyBitmap, targetRectangle, sourceRectangle);
         }
 
         /// <summary>
@@ -364,22 +343,7 @@ namespace FastBitmap.Utils
 
             FastBitmap.CopyRegion(copyBitmap, canvasBitmap, sourceRectangle, targetRectangle);
 
-            for (int y = targetRectangle.Y; y < Math.Min(sourceRectangle.Height, targetRectangle.Height); y++)
-            {
-                for (int x = targetRectangle.X; x < Math.Min(sourceRectangle.Width, targetRectangle.Width); x++)
-                {
-                    // Ignore pixels out of range
-                    if (x < 0 || y < 0 || x >= canvasBitmap.Width ||
-                        x >= copyBitmap.Width + targetRectangle.X - sourceRectangle.X ||
-                        y >= canvasBitmap.Height || y >= copyBitmap.Height + targetRectangle.Y - sourceRectangle.Y)
-                        continue;
-
-                    Assert.AreEqual(canvasBitmap.GetPixel(x, y).ToArgb(),
-                        copyBitmap.GetPixel(x - targetRectangle.X + sourceRectangle.X,
-                            y - targetRectangle.Y + sourceRectangle.Y).ToArgb(),
-                        "Pixels of the target region must fully match the pixels from the origin region");
-                }
-            }
+            AssertCopyRegionEquals(canvasBitmap, copyBitmap, targetRectangle, sourceRectangle);
         }
 
         /// <summary>
@@ -397,27 +361,12 @@ namespace FastBitmap.Utils
 
             FastBitmap.CopyRegion(copyBitmap, canvasBitmap, sourceRectangle, targetRectangle);
 
-            for (int y = targetRectangle.Y; y < Math.Min(sourceRectangle.Height, targetRectangle.Height); y++)
-            {
-                for (int x = targetRectangle.X; x < Math.Min(sourceRectangle.Width, targetRectangle.Width); x++)
-                {
-                    // Ignore pixels out of range
-                    if (x < 0 || y < 0 || x >= canvasBitmap.Width ||
-                        x >= copyBitmap.Width + targetRectangle.X - sourceRectangle.X ||
-                        y >= canvasBitmap.Height || y >= copyBitmap.Height + targetRectangle.Y - sourceRectangle.Y)
-                        continue;
-
-                    Assert.AreEqual(canvasBitmap.GetPixel(x, y).ToArgb(),
-                        copyBitmap.GetPixel(x - targetRectangle.X + sourceRectangle.X,
-                            y - targetRectangle.Y + sourceRectangle.Y).ToArgb(),
-                        "Pixels of the target region must fully match the pixels from the origin region");
-                }
-            }
+            AssertCopyRegionEquals(canvasBitmap, copyBitmap, targetRectangle, sourceRectangle);
         }
 
         /// <summary>
         /// Tests the CopyRegion() static and instance methods by creating two bitmaps, copying regions over from one to another, and comparing the expected pixel equalities.
-        /// The source region provided is invalid
+        /// The source region provided is invalid, and no modifications are to be made
         /// </summary>
         [TestMethod]
         public void TestInvalidCopyRegion()
@@ -430,22 +379,7 @@ namespace FastBitmap.Utils
 
             FastBitmap.CopyRegion(copyBitmap, canvasBitmap, sourceRectangle, targetRectangle);
 
-            for (int y = targetRectangle.Y; y < Math.Min(sourceRectangle.Height, targetRectangle.Height); y++)
-            {
-                for (int x = targetRectangle.X; x < Math.Min(sourceRectangle.Width, targetRectangle.Width); x++)
-                {
-                    // Ignore pixels out of range
-                    if (x < 0 || y < 0 || x >= canvasBitmap.Width ||
-                        x >= copyBitmap.Width + targetRectangle.X - sourceRectangle.X ||
-                        y >= canvasBitmap.Height || y >= copyBitmap.Height + targetRectangle.Y - sourceRectangle.Y)
-                        continue;
-
-                    Assert.AreEqual(canvasBitmap.GetPixel(x, y).ToArgb(),
-                        copyBitmap.GetPixel(x - targetRectangle.X + sourceRectangle.X,
-                            y - targetRectangle.Y + sourceRectangle.Y).ToArgb(),
-                        "Pixels of the target region must fully match the pixels from the origin region");
-                }
-            }
+            AssertCopyRegionEquals(canvasBitmap, copyBitmap, targetRectangle, sourceRectangle);
         }
 
         /// <summary>
@@ -465,6 +399,77 @@ namespace FastBitmap.Utils
             FastBitmap.CopyRegion(bitmap3, bitmap4, region, region);
             FastBitmap.CopyRegion(bitmap1, bitmap3, region, region);
             FastBitmap.CopyRegion(bitmap4, bitmap2, region, region);
+        }
+
+        /// <summary>
+        /// Tests a copy region operation that is slices through the destination
+        /// </summary>
+        [TestMethod]
+        public void TestSlicedDestinationCopyRegion()
+        {
+            // Have a copy operation that goes:
+            //
+            //       -src---
+            // -dest-|-----|------
+            // |     |xxxxx|     |
+            // |     |xxxxx|     |
+            // ------|-----|------
+            //       -------
+            // 
+
+            Bitmap canvasBitmap = new Bitmap(128, 32);
+            Bitmap copyBitmap = GenerateRandomBitmap(32, 64);
+
+            Rectangle sourceRectangle = new Rectangle(0, 0, 32, 64);
+            Rectangle targetRectangle = new Rectangle(32, -16, 32, 64);
+
+            FastBitmap.CopyRegion(copyBitmap, canvasBitmap, sourceRectangle, targetRectangle);
+
+            AssertCopyRegionEquals(canvasBitmap, copyBitmap, targetRectangle, sourceRectangle);
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Tests the FastBitmapLocker struct returned by lock calls
+        /// </summary>
+        [TestMethod]
+        public void TestFastBitmapLocker()
+        {
+            Bitmap bitmap = new Bitmap(64, 64);
+            FastBitmap fastBitmap = new FastBitmap(bitmap);
+
+            // Immediate lock and dispose
+            fastBitmap.Lock().Dispose();
+            Assert.IsFalse(fastBitmap.Locked, "After disposing of the FastBitmapLocker object, the underlying fast bitmap must be unlocked");
+
+            using (fastBitmap.Lock())
+            {
+                fastBitmap.SetPixel(0, 0, 0);
+            }
+
+            Assert.IsFalse(fastBitmap.Locked, "After disposing of the FastBitmapLocker object, the underlying fast bitmap must be unlocked");
+
+            // Test the conditional unlocking of the fast bitmap locker by unlocking the fast bitmap before exiting the 'using' block
+            using (fastBitmap.Lock())
+            {
+                fastBitmap.SetPixel(0, 0, 0);
+                fastBitmap.Unlock();
+            }
+        }
+
+        [TestMethod]
+        public void TestLockExtensionMethod()
+        {
+            Bitmap bitmap = new Bitmap(64, 64);
+
+            using (FastBitmap fast = bitmap.FastLock())
+            {
+                fast.SetPixel(0, 0, Color.Red);
+            }
+
+            // Test unlocking by trying to modify the bitmap
+            bitmap.SetPixel(0, 0, Color.Blue);
         }
 
         [TestMethod]
@@ -627,15 +632,11 @@ namespace FastBitmap.Utils
             {
                 seed = _seedRandom.Next();
             }
-
             Bitmap bitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb);
-
             FastBitmap fastBitmap = new FastBitmap(bitmap);
             fastBitmap.Lock();
-
             // Plot the image with random pixels now
             Random r = new Random(seed);
-
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
@@ -644,9 +645,7 @@ namespace FastBitmap.Utils
                     fastBitmap.SetPixel(x, y, pixelColor);
                 }
             }
-
             fastBitmap.Unlock();
-
             return bitmap;
         }
 
@@ -656,7 +655,7 @@ namespace FastBitmap.Utils
         /// <param name="bitmap1">The first bitmap object to compare</param>
         /// <param name="bitmap2">The second bitmap object to compare</param>
         /// <param name="message">The message to display when the comparision fails</param>
-        public void AssertBitmapEquals(Bitmap bitmap1, Bitmap bitmap2, string message = "")
+        public static void AssertBitmapEquals(Bitmap bitmap1, Bitmap bitmap2, string message = "")
         {
             if(bitmap1.PixelFormat != bitmap2.PixelFormat)
                 Assert.Fail(message);
@@ -669,231 +668,70 @@ namespace FastBitmap.Utils
                 }
             }
         }
-        
-        /// <summary>
-        /// Profiles the FastBitmap class against the native System.Drawing.Bitmap class
-        /// </summary>
-        public static void ProfileFastBitmap()
-        {
-            Console.WriteLine("-- SetPixel profiling");
-            ProfileFastSetPixel();
-
-            Console.WriteLine("\n-- GetPixel profiling");
-            ProfileFastGetPixel();
-
-            Console.WriteLine("\n-- Bitmap copying profiling");
-            ProfileFastCopy();
-
-            Console.WriteLine("\n-- Bitmap clearing profiling");
-            ProfileFastClear();
-        }
 
         /// <summary>
-        /// Profiles the SetPixel() operation
+        /// Asserts that the result of a copy region operation was successfull by analysing the source and target regions for pixel-by-pixel equalities
         /// </summary>
-        public static void ProfileFastSetPixel()
+        /// <param name="canvasBitmap">The bitmap that was drawn into</param>
+        /// <param name="copyBitmap">The bitmap that was copied from</param>
+        /// <param name="targetRectangle">The region on the canvas bitmap that was drawn into</param>
+        /// <param name="sourceRectangle">The region from the source rectangle that was drawn</param>
+        /// <param name="message">The message to display on assertion error</param>
+        public static void AssertCopyRegionEquals(Bitmap canvasBitmap, Bitmap copyBitmap, Rectangle targetRectangle,
+            Rectangle sourceRectangle, string message = "Pixels of the target region must fully match the pixels from the origin region")
         {
-            long bitmapMs;
-            long fastBitmapMs;
+            Rectangle srcBitmapRect = new Rectangle(0, 0, copyBitmap.Width, copyBitmap.Height);
+            Rectangle destBitmapRect = new Rectangle(0, 0, canvasBitmap.Width, canvasBitmap.Height);
 
-            Bitmap bitmap = new Bitmap(1024, 1024);
+            // Check if the rectangle configuration doesn't generate invalid states or does not affect the target image
+            if (sourceRectangle.Width <= 0 || sourceRectangle.Height <= 0 || targetRectangle.Width <= 0 || targetRectangle.Height <= 0 ||
+                !srcBitmapRect.IntersectsWith(sourceRectangle) || !targetRectangle.IntersectsWith(destBitmapRect))
+                return;
 
-            Stopwatch sw = Stopwatch.StartNew();
+            // Find the areas of the first and second bitmaps that are going to be affected
+            srcBitmapRect = Rectangle.Intersect(sourceRectangle, srcBitmapRect);
 
-            for (int y = 0; y < bitmap.Height; y++)
+            // Clip the source rectangle on top of the destination rectangle in a way that clips out the regions of the original bitmap
+            // that will not be drawn on the destination bitmap for being out of bounds
+            srcBitmapRect = Rectangle.Intersect(srcBitmapRect, new Rectangle(sourceRectangle.X, sourceRectangle.Y, targetRectangle.Width, targetRectangle.Height));
+
+            destBitmapRect = Rectangle.Intersect(targetRectangle, destBitmapRect);
+
+            // Clipt the source bitmap region yet again here, this time against the available canvas bitmap rectangle
+            // We transpose the second rectangle by the source's X and Y because we want to clip the target rectangle in the source rectangle's coordinates
+            srcBitmapRect = Rectangle.Intersect(srcBitmapRect, new Rectangle(-targetRectangle.X + sourceRectangle.X, -targetRectangle.Y + sourceRectangle.Y, canvasBitmap.Width, canvasBitmap.Height));
+
+            // Calculate the rectangle containing the maximum possible area that is supposed to be affected by the copy region operation
+            int copyWidth = Math.Min(srcBitmapRect.Width, destBitmapRect.Width);
+            int copyHeight = Math.Min(srcBitmapRect.Height, destBitmapRect.Height);
+
+            if (copyWidth == 0 || copyHeight == 0)
+                return;
+
+            int srcStartX = srcBitmapRect.Left;
+            int srcStartY = srcBitmapRect.Top;
+
+            int destStartX = destBitmapRect.Left;
+            int destStartY = destBitmapRect.Top;
+
+            for (int y = 0; y < copyHeight; y++)
             {
-                for (int x = 0; x < bitmap.Width; x++)
+                for (int x = 0; x < copyWidth; x++)
                 {
-                    bitmap.SetPixel(x, y, Color.Red);
+                    int destX = destStartX;
+                    int destY = destStartY + y;
+
+                    int srcX = srcStartX;
+                    int srcY = srcStartY + y;
+
+                    Assert.AreEqual(copyBitmap.GetPixel(srcX, srcY).ToArgb(), canvasBitmap.GetPixel(destX, destY).ToArgb(), message);
                 }
             }
-
-            bitmapMs = sw.ElapsedMilliseconds;
-
-            Console.WriteLine(bitmap.Width + " x " + bitmap.Height + " Bitmap         SetPixel: " + bitmapMs + "ms");
-
-            sw = Stopwatch.StartNew();
-
-            FastBitmap fastBitmap = new FastBitmap(bitmap);
-
-            fastBitmap.Lock();
-
-            for (int y = 0; y < bitmap.Height; y++)
-            {
-                for (int x = 0; x < bitmap.Width; x++)
-                {
-                    fastBitmap.SetPixel(x, y, Color.Red);
-                }
-            }
-
-            fastBitmap.Unlock();
-
-            Console.WriteLine(fastBitmap.Width + " x " + fastBitmap.Height + " FastBitmap     SetPixel: " + sw.ElapsedMilliseconds + "ms");
-
-            sw = Stopwatch.StartNew();
-
-            fastBitmap = new FastBitmap(bitmap);
-
-            fastBitmap.Lock();
-
-            // We cache de color to an integer for faster setting
-            int colorInt = Color.Red.ToArgb();
-
-            for (int y = 0; y < bitmap.Height; y++)
-            {
-                for (int x = 0; x < bitmap.Width; x++)
-                {
-                    fastBitmap.SetPixel(x, y, colorInt);
-                }
-            }
-
-            fastBitmap.Unlock();
-
-            fastBitmapMs = sw.ElapsedMilliseconds;
-
-            Console.WriteLine(fastBitmap.Width + " x " + fastBitmap.Height + " FastBitmap Int SetPixel: " + fastBitmapMs + "ms");
-            Console.WriteLine("Results: FastBitmap " + ((float)bitmapMs / fastBitmapMs).ToString("0.00") + "x faster");
-        }
-
-        /// <summary>
-        /// Profiles the GetPixel() operation
-        /// </summary>
-        public static void ProfileFastGetPixel()
-        {
-            long bitmapMs;
-            long fastBitmapMs;
-
-            Bitmap bitmap = new Bitmap(1024, 1024);
-
-            Stopwatch sw = Stopwatch.StartNew();
-
-            for (int y = 0; y < bitmap.Height; y++)
-            {
-                for (int x = 0; x < bitmap.Width; x++)
-                {
-                    bitmap.GetPixel(x, y);
-                }
-            }
-
-            bitmapMs = sw.ElapsedMilliseconds;
-
-            Console.WriteLine(bitmap.Width + " x " + bitmap.Height + " Bitmap         GetPixel: " + bitmapMs + "ms");
-
-            sw = Stopwatch.StartNew();
-
-            FastBitmap fastBitmap = new FastBitmap(bitmap);
-
-            fastBitmap.Lock();
-
-            for (int y = 0; y < bitmap.Height; y++)
-            {
-                for (int x = 0; x < bitmap.Width; x++)
-                {
-                    fastBitmap.GetPixel(x, y);
-                }
-            }
-
-            fastBitmap.Unlock();
-
-            Console.WriteLine(fastBitmap.Width + " x " + fastBitmap.Height + " FastBitmap     GetPixel: " + sw.ElapsedMilliseconds + "ms");
-
-            sw = Stopwatch.StartNew();
-
-            fastBitmap = new FastBitmap(bitmap);
-
-            fastBitmap.Lock();
-
-            // We cache de color to an integer for faster setting
-            int colorInt = Color.Red.ToArgb();
-
-            for (int y = 0; y < bitmap.Height; y++)
-            {
-                for (int x = 0; x < bitmap.Width; x++)
-                {
-                    fastBitmap.GetPixelInt(x, y);
-                }
-            }
-
-            fastBitmap.Unlock();
-
-            fastBitmapMs = sw.ElapsedMilliseconds;
-
-            Console.WriteLine(fastBitmap.Width + " x " + fastBitmap.Height + " FastBitmap Int GetPixel: " + fastBitmapMs + "ms");
-            Console.WriteLine("Results: FastBitmap " + ((float)bitmapMs / fastBitmapMs).ToString("0.00") + "x faster");
-        }
-
-        /// <summary>
-        /// Profiles a whole copy of pixels utilizing Bitmap's SetPixel and FastBitmap's CopyPixels
-        /// </summary>
-        public static void ProfileFastCopy()
-        {
-            long bitmapMs;
-            long fastBitmapMs;
-
-            Bitmap bitmap1 = new Bitmap(1024, 1024);
-            Bitmap bitmap2 = new Bitmap(1024, 1024);
-
-            Stopwatch sw = Stopwatch.StartNew();
-
-            for (int y = 0; y < bitmap1.Height; y++)
-            {
-                for (int x = 0; x < bitmap1.Width; x++)
-                {
-                    bitmap1.SetPixel(x, y, bitmap2.GetPixel(x, y));
-                }
-            }
-
-            bitmapMs = sw.ElapsedMilliseconds;
-
-            Console.WriteLine(bitmap1.Width + " x " + bitmap1.Height + " Bitmap     SetPixel:    " + bitmapMs + "ms");
-
-            sw = Stopwatch.StartNew();
-
-            FastBitmap.CopyPixels(bitmap1, bitmap2);
-
-            fastBitmapMs = sw.ElapsedMilliseconds;
-
-            Console.WriteLine(bitmap1.Width + " x " + bitmap1.Height + " FastBitmap CopyPixels:  " + fastBitmapMs + "ms");
-            Console.WriteLine("Results: FastBitmap " + ((float)bitmapMs / fastBitmapMs).ToString("0.00") + "x faster");
-        }
-
-        /// <summary>
-        /// Profiles a clearing of all bitmap pixels using the Bitmap's SetPixel and the FastBitmap's Clear
-        /// </summary>
-        public static void ProfileFastClear()
-        {
-            long bitmapMs;
-            long fastBitmapMs;
-
-            Bitmap bitmap = new Bitmap(1024, 1024);
-
-            Stopwatch sw = Stopwatch.StartNew();
-
-            for (int y = 0; y < bitmap.Height; y++)
-            {
-                for (int x = 0; x < bitmap.Width; x++)
-                {
-                    bitmap.SetPixel(x, y, Color.Red);
-                }
-            }
-
-            bitmapMs = sw.ElapsedMilliseconds;
-
-            Console.WriteLine(bitmap.Width + " x " + bitmap.Height + " Bitmap     SetPixel: " + bitmapMs + "ms");
-
-            sw = Stopwatch.StartNew();
-
-            FastBitmap.ClearBitmap(bitmap, Color.Red);
-
-            fastBitmapMs = sw.ElapsedMilliseconds;
-
-            Console.WriteLine(bitmap.Width + " x " + bitmap.Height + " FastBitmap Clear:    " + fastBitmapMs + "ms");
-            Console.WriteLine("Results: FastBitmap " + ((float)bitmapMs / fastBitmapMs).ToString("0.00") + "x faster");
         }
 
         /// <summary>
         /// Random number generator used to randomize seeds for image generation when none are provided
         /// </summary>
-        private static Random _seedRandom = new Random();
+        private static readonly Random _seedRandom = new Random();
     }
 }
