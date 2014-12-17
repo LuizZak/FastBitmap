@@ -32,13 +32,13 @@ namespace FastBitmap
     /// <summary>
     /// Encapsulates a Bitmap for fast bitmap pixel operations using 32bpp images
     /// </summary>
-    public unsafe class FastBitmap
+    public unsafe class FastBitmap : IDisposable
     {
         /// <summary>
         /// Specifies the number of bytes available per pixel of the bitmap object being manipulated
         /// </summary>
         private const int BytesPerPixel = 4;
-        
+
         /// <summary>
         /// The Bitmap object encapsulated on this FastBitmap
         /// </summary>
@@ -52,12 +52,12 @@ namespace FastBitmap
         /// <summary>
         /// The stride of the bitmap
         /// </summary>
-        private readonly int _strideWidth;
+        private int _strideWidth;
 
         /// <summary>
         /// The first pixel of the bitmap
         /// </summary>
-        private readonly int *_scan0;
+        private int *_scan0;
 
         /// <summary>
         /// Whether the current bitmap is locked
@@ -67,12 +67,12 @@ namespace FastBitmap
         /// <summary>
         /// The width of this FastBitmap
         /// </summary>
-        private int _width;
+        private readonly int _width;
 
         /// <summary>
         /// The height of this FastBitmap
         /// </summary>
-        private int _height;
+        private readonly int _height;
 
         /// <summary>
         /// Gets the width of this FastBitmap object
@@ -149,35 +149,49 @@ namespace FastBitmap
             _width = bitmap.Width;
             _height = bitmap.Height;
         }
-        
+
+        /// <summary>
+        /// Disposes of this fast bitmap object and releases any pending resources.
+        /// The underlying bitmap is not disposes, and is unlocked, if currently locked
+        /// </summary>
+        public void Dispose()
+        {
+            if (_locked)
+            {
+                Unlock();
+            }
+        }
+
         /// <summary>
         /// Locks the bitmap to start the bitmap operations. If the bitmap is already locked,
         /// an exception is thrown
         /// </summary>
+        /// <returns>A fast bitmap locked struct that will unlock the underlying bitmap after disposal</returns>
         /// <exception cref="InvalidOperationException">The bitmap is already locked</exception>
         /// <exception cref="System.Exception">The locking operation in the underlying bitmap failed</exception>
         /// <exception cref="InvalidOperationException">The bitmap is already locked outside this fast bitmap</exception>
-        public void Lock()
+        public FastBitmapLocker Lock()
         {
             if (_locked)
             {
                 throw new InvalidOperationException("Unlock must be called before a Lock operation");
             }
 
-            Lock(ImageLockMode.ReadWrite);
+            return Lock(ImageLockMode.ReadWrite);
         }
 
         /// <summary>
         /// Locks the bitmap to start the bitmap operations
         /// </summary>
         /// <param name="lockMode">The lock mode to use on the bitmap</param>
+        /// <returns>A fast bitmap locked struct that will unlock the underlying bitmap after disposal</returns>
         /// <exception cref="System.Exception">The locking operation in the underlying bitmap failed</exception>
         /// <exception cref="InvalidOperationException">The bitmap is already locked outside this fast bitmap</exception>
-        private void Lock(ImageLockMode lockMode)
+        private FastBitmapLocker Lock(ImageLockMode lockMode)
         {
             Rectangle rect = new Rectangle(0, 0, _bitmap.Width, _bitmap.Height);
 
-            Lock(lockMode, rect);
+            return Lock(lockMode, rect);
         }
 
         /// <summary>
@@ -185,10 +199,11 @@ namespace FastBitmap
         /// </summary>
         /// <param name="lockMode">The lock mode to use on the bitmap</param>
         /// <param name="rect">The rectangle to lock</param>
+        /// <returns>A fast bitmap locked struct that will unlock the underlying bitmap after disposal</returns>
         /// <exception cref="System.ArgumentException">The provided region is invalid</exception>
         /// <exception cref="System.Exception">The locking operation in the underlying bitmap failed</exception>
         /// <exception cref="InvalidOperationException">The bitmap region is already locked</exception>
-        private void Lock(ImageLockMode lockMode, Rectangle rect)
+        private FastBitmapLocker Lock(ImageLockMode lockMode, Rectangle rect)
         {
             // Lock the bitmap's bits
             _bitmapData = _bitmap.LockBits(rect, lockMode, _bitmap.PixelFormat);
@@ -197,6 +212,8 @@ namespace FastBitmap
             _strideWidth = _bitmapData.Stride / BytesPerPixel;
 
             _locked = true;
+
+            return new FastBitmapLocker(this);
         }
 
         /// <summary>
@@ -378,40 +395,65 @@ namespace FastBitmap
         /// <exception cref="ArgumentException">The provided source bitmap is the same bitmap locked in this FastBitmap</exception>
         public void CopyRegion(Bitmap source, Rectangle srcRect, Rectangle destRect)
         {
-            // Check if the rectangle configuration doesn't generate invalid states or does not affect the target image
-            if (srcRect.Width <= 0 || srcRect.Height <= 0 || destRect.Width <= 0 || destRect.Height <= 0 || destRect.X > _width || destRect.Y > _height)
-                return;
-
             // Throw exception when trying to copy same bitmap over
             if (source == _bitmap)
             {
                 throw new ArgumentException("Copying regions across the same bitmap is not supported", "source");
             }
 
+            Rectangle srcBitmapRect = new Rectangle(0, 0, source.Width, source.Height);
+            Rectangle destBitmapRect = new Rectangle(0, 0, _width, _height);
+
+            // Check if the rectangle configuration doesn't generate invalid states or does not affect the target image
+            if (srcRect.Width <= 0 || srcRect.Height <= 0 || destRect.Width <= 0 || destRect.Height <= 0 ||
+                !srcBitmapRect.IntersectsWith(srcRect) || !destRect.IntersectsWith(destBitmapRect))
+                return;
+
+            // Find the areas of the first and second bitmaps that are going to be affected
+            srcBitmapRect = Rectangle.Intersect(srcRect, srcBitmapRect);
+
+            // Clip the source rectangle on top of the destination rectangle in a way that clips out the regions of the original bitmap
+            // that will not be drawn on the destination bitmap for being out of bounds
+            srcBitmapRect = Rectangle.Intersect(srcBitmapRect, new Rectangle(srcRect.X, srcRect.Y, destRect.Width, destRect.Height));
+
+            destBitmapRect = Rectangle.Intersect(destRect, destBitmapRect);
+
+            // Clipt the source bitmap region yet again here
+            srcBitmapRect = Rectangle.Intersect(srcBitmapRect, new Rectangle(-destRect.X + srcRect.X, -destRect.Y + srcRect.Y, _width, _height));
+
+            // Calculate the rectangle containing the maximum possible area that is supposed to be affected by the copy region operation
+            int copyWidth = Math.Min(srcBitmapRect.Width, destBitmapRect.Width);
+            int copyHeight = Math.Min(srcBitmapRect.Height, destBitmapRect.Height);
+
+            if (copyWidth == 0 || copyHeight == 0)
+                return;
+
+            int srcStartX = srcBitmapRect.Left;
+            int srcStartY = srcBitmapRect.Top;
+
+            int destStartX = destBitmapRect.Left;
+            int destStartY = destBitmapRect.Top;
+
             FastBitmap fastSource = new FastBitmap(source);
-            fastSource.Lock();
 
-            int copyWidth = Math.Min(srcRect.Width, destRect.Width);
-            int copyHeight = Math.Min(srcRect.Height, destRect.Height);
-
-            for (int y = 0; y < copyHeight; y++)
+            using (fastSource.Lock())
             {
-                for (int x = 0; x < copyWidth; x++)
+                ulong strideWidth = (ulong)copyWidth * BytesPerPixel;
+
+                for (int y = 0; y < copyHeight; y++)
                 {
-                    int destX = destRect.X + x;
-                    int destY = destRect.Y + y;
+                    int destX = destStartX;
+                    int destY = destStartY + y;
 
-                    int srcX = x + srcRect.X;
-                    int srcY = y + srcRect.Y;
+                    int srcX = srcStartX;
+                    int srcY = srcStartY + y;
 
-                    if (destX >= 0 && destY >= 0 && destX < _width && destY < _height && srcX >= 0 && srcY >= 0 && srcX < fastSource._width && srcY < fastSource._height)
-                    {
-                        SetPixel(destX, destY, fastSource.GetPixelInt(srcX, srcY));
-                    }
+                    long offsetSrc = (srcX + srcY * fastSource._strideWidth);
+                    long offsetDest = (destX + destY * _strideWidth);
+
+                    memcpy(_scan0 + offsetDest, fastSource._scan0 + offsetSrc, strideWidth);
                 }
             }
-
-            fastSource.Unlock();
         }
 
         /// <summary>
@@ -473,26 +515,77 @@ namespace FastBitmap
         /// <exception cref="ArgumentException">The provided source and target bitmaps are the same bitmap</exception>
         public static void CopyRegion(Bitmap source, Bitmap target, Rectangle srcRect, Rectangle destRect)
         {
-            // Check if the rectangle configuration doesn't generate invalid states or does not affect the target image
-            if (srcRect.Width <= 0 || srcRect.Height <= 0 || destRect.Width <= 0 || destRect.Height <= 0 || destRect.X > target.Width || destRect.Y > target.Height)
-                return;
-
-            // Throw exception when trying to copy same bitmap over
-            if (source == target)
-            {
-                throw new ArgumentException("Copying regions across the same bitmap is not supported", "source");
-            }
-
             FastBitmap fastTarget = new FastBitmap(target);
-            fastTarget.Lock();
 
-            fastTarget.CopyRegion(source, srcRect, destRect);
-
-            fastTarget.Unlock();
+            using (fastTarget.Lock())
+            {
+                fastTarget.CopyRegion(source, srcRect, destRect);
+            }
         }
-        
+
         // .NET wrapper to native call of 'memcpy'. Requires Microsoft Visual C++ Runtime installed
         [DllImport("msvcrt.dll", EntryPoint = "memcpy", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
         public static extern IntPtr memcpy(IntPtr dest, IntPtr src, ulong count);
+
+        // .NET wrapper to native call of 'memcpy'. Requires Microsoft Visual C++ Runtime installed
+        [DllImport("msvcrt.dll", EntryPoint = "memcpy", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
+        public static extern IntPtr memcpy(void* dest, void* src, ulong count);
+
+        /// <summary>
+        /// Represents a disposable structure that is returned during Lock() calls, and unlocks the bitmap on Dispose calls
+        /// </summary>
+        public struct FastBitmapLocker : IDisposable
+        {
+            /// <summary>
+            /// The fast bitmap instance attached to this locker
+            /// </summary>
+            private readonly FastBitmap _fastBitmap;
+
+            /// <summary>
+            /// Gets the fast bitmap instance attached to this locker
+            /// </summary>
+            public FastBitmap FastBitmap
+            {
+                get { return _fastBitmap; }
+            }
+
+            /// <summary>
+            /// Initializes a new instance of the FastBitmapLocker struct with an initial fast bitmap object.
+            /// The fast bitmap object passed will be unlocked after calling Dispose() on this struct
+            /// </summary>
+            /// <param name="fastBitmap">A fast bitmap to attach to this locker which will be released after a call to Dispose</param>
+            public FastBitmapLocker(FastBitmap fastBitmap)
+            {
+                _fastBitmap = fastBitmap;
+            }
+
+            /// <summary>
+            /// Disposes of this FastBitmapLocker, essentially unlocking the underlying fast bitmap
+            /// </summary>
+            public void Dispose()
+            {
+                if(_fastBitmap._locked)
+                    _fastBitmap.Unlock();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Static class that contains fast bitmap extension methdos for the Bitmap class
+    /// </summary>
+    public static class FastBitmapExtensions
+    {
+        /// <summary>
+        /// Locks this bitmap into memory and returns a FastBitmap that can be used to manipulate its pixels
+        /// </summary>
+        /// <param name="bitmap">The bitmap to lock</param>
+        /// <returns>A locked FastBitmap</returns>
+        public static FastBitmap FastLock(this Bitmap bitmap)
+        {
+            FastBitmap fast = new FastBitmap(bitmap);
+            fast.Lock();
+
+            return fast;
+        }
     }
 }
