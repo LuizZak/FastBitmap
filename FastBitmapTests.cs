@@ -205,7 +205,7 @@ namespace PixelariaTests.PixelariaTests.Tests.Utils
         {
             Bitmap bitmap1 = new Bitmap(64, 64);
             Bitmap bitmap2 = new Bitmap(64, 64);
-
+            
             FastBitmap fastBitmap1 = new FastBitmap(bitmap1);
             fastBitmap1.Lock();
 
@@ -644,6 +644,227 @@ namespace PixelariaTests.PixelariaTests.Tests.Utils
                     Assert.AreEqual(bitmap1.GetPixel(x, y).ToArgb(), bitmap2.GetPixel(x, y).ToArgb(), message);
                 }
             }
+        }
+        
+        /// <summary>
+        /// Profiles the FastBitmap class against the native System.Drawing.Bitmap class
+        /// </summary>
+        public static void ProfileFastBitmap()
+        {
+            Console.WriteLine("-- SetPixel profiling");
+            ProfileFastSetPixel();
+
+            Console.WriteLine("\n-- GetPixel profiling");
+            ProfileFastGetPixel();
+
+            Console.WriteLine("\n-- Bitmap copying profiling");
+            ProfileFastCopy();
+
+            Console.WriteLine("\n-- Bitmap clearing profiling");
+            ProfileFastClear();
+        }
+
+        /// <summary>
+        /// Profiles the SetPixel() operation
+        /// </summary>
+        public static void ProfileFastSetPixel()
+        {
+            long bitmapMs;
+            long fastBitmapMs;
+
+            Bitmap bitmap = new Bitmap(1024, 1024);
+
+            Stopwatch sw = Stopwatch.StartNew();
+
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    bitmap.SetPixel(x, y, Color.Red);
+                }
+            }
+
+            bitmapMs = sw.ElapsedMilliseconds;
+
+            Console.WriteLine(bitmap.Width + " x " + bitmap.Height + " Bitmap         SetPixel: " + bitmapMs + "ms");
+
+            sw = Stopwatch.StartNew();
+
+            FastBitmap fastBitmap = new FastBitmap(bitmap);
+
+            fastBitmap.Lock();
+
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    fastBitmap.SetPixel(x, y, Color.Red);
+                }
+            }
+
+            fastBitmap.Unlock();
+
+            Console.WriteLine(fastBitmap.Width + " x " + fastBitmap.Height + " FastBitmap     SetPixel: " + sw.ElapsedMilliseconds + "ms");
+
+            sw = Stopwatch.StartNew();
+
+            fastBitmap = new FastBitmap(bitmap);
+
+            fastBitmap.Lock();
+
+            // We cache de color to an integer for faster setting
+            int colorInt = Color.Red.ToArgb();
+
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    fastBitmap.SetPixel(x, y, colorInt);
+                }
+            }
+
+            fastBitmap.Unlock();
+
+            fastBitmapMs = sw.ElapsedMilliseconds;
+
+            Console.WriteLine(fastBitmap.Width + " x " + fastBitmap.Height + " FastBitmap Int SetPixel: " + fastBitmapMs + "ms");
+            Console.WriteLine("Results: FastBitmap " + ((float)bitmapMs / fastBitmapMs).ToString("0.00") + "x faster");
+        }
+
+        /// <summary>
+        /// Profiles the GetPixel() operation
+        /// </summary>
+        public static void ProfileFastGetPixel()
+        {
+            long bitmapMs;
+            long fastBitmapMs;
+
+            Bitmap bitmap = new Bitmap(1024, 1024);
+
+            Stopwatch sw = Stopwatch.StartNew();
+
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    bitmap.GetPixel(x, y);
+                }
+            }
+
+            bitmapMs = sw.ElapsedMilliseconds;
+
+            Console.WriteLine(bitmap.Width + " x " + bitmap.Height + " Bitmap         GetPixel: " + bitmapMs + "ms");
+
+            sw = Stopwatch.StartNew();
+
+            FastBitmap fastBitmap = new FastBitmap(bitmap);
+
+            fastBitmap.Lock();
+
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    fastBitmap.GetPixel(x, y);
+                }
+            }
+
+            fastBitmap.Unlock();
+
+            Console.WriteLine(fastBitmap.Width + " x " + fastBitmap.Height + " FastBitmap     GetPixel: " + sw.ElapsedMilliseconds + "ms");
+
+            sw = Stopwatch.StartNew();
+
+            fastBitmap = new FastBitmap(bitmap);
+
+            fastBitmap.Lock();
+
+            // We cache de color to an integer for faster setting
+            int colorInt = Color.Red.ToArgb();
+
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    fastBitmap.GetPixelInt(x, y);
+                }
+            }
+
+            fastBitmap.Unlock();
+
+            fastBitmapMs = sw.ElapsedMilliseconds;
+
+            Console.WriteLine(fastBitmap.Width + " x " + fastBitmap.Height + " FastBitmap Int GetPixel: " + fastBitmapMs + "ms");
+            Console.WriteLine("Results: FastBitmap " + ((float)bitmapMs / fastBitmapMs).ToString("0.00") + "x faster");
+        }
+
+        /// <summary>
+        /// Profiles a whole copy of pixels utilizing Bitmap's SetPixel and FastBitmap's CopyPixels
+        /// </summary>
+        public static void ProfileFastCopy()
+        {
+            long bitmapMs;
+            long fastBitmapMs;
+
+            Bitmap bitmap1 = new Bitmap(1024, 1024);
+            Bitmap bitmap2 = new Bitmap(1024, 1024);
+
+            Stopwatch sw = Stopwatch.StartNew();
+
+            for (int y = 0; y < bitmap1.Height; y++)
+            {
+                for (int x = 0; x < bitmap1.Width; x++)
+                {
+                    bitmap1.SetPixel(x, y, bitmap2.GetPixel(x, y));
+                }
+            }
+
+            bitmapMs = sw.ElapsedMilliseconds;
+
+            Console.WriteLine(bitmap1.Width + " x " + bitmap1.Height + " Bitmap     SetPixel:    " + bitmapMs + "ms");
+
+            sw = Stopwatch.StartNew();
+
+            FastBitmap.CopyPixels(bitmap1, bitmap2);
+
+            fastBitmapMs = sw.ElapsedMilliseconds;
+
+            Console.WriteLine(bitmap1.Width + " x " + bitmap1.Height + " FastBitmap CopyPixels:  " + fastBitmapMs + "ms");
+            Console.WriteLine("Results: FastBitmap " + ((float)bitmapMs / fastBitmapMs).ToString("0.00") + "x faster");
+        }
+
+        /// <summary>
+        /// Profiles a clearing of all bitmap pixels using the Bitmap's SetPixel and the FastBitmap's Clear
+        /// </summary>
+        public static void ProfileFastClear()
+        {
+            long bitmapMs;
+            long fastBitmapMs;
+
+            Bitmap bitmap = new Bitmap(1024, 1024);
+
+            Stopwatch sw = Stopwatch.StartNew();
+
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    bitmap.SetPixel(x, y, Color.Red);
+                }
+            }
+
+            bitmapMs = sw.ElapsedMilliseconds;
+
+            Console.WriteLine(bitmap.Width + " x " + bitmap.Height + " Bitmap     SetPixel: " + bitmapMs + "ms");
+
+            sw = Stopwatch.StartNew();
+
+            FastBitmap.ClearBitmap(bitmap, Color.Red);
+
+            fastBitmapMs = sw.ElapsedMilliseconds;
+
+            Console.WriteLine(bitmap.Width + " x " + bitmap.Height + " FastBitmap Clear:    " + fastBitmapMs + "ms");
+            Console.WriteLine("Results: FastBitmap " + ((float)bitmapMs / fastBitmapMs).ToString("0.00") + "x faster");
         }
 
         /// <summary>
