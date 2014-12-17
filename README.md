@@ -23,3 +23,35 @@ Editing pixels of a bitmap is just as easy as:
     
     // Don't forget to unlock!
     fastBitmap.Unlock();
+```
+
+
+Speed
+------
+
+The following profiling tests 
+
+**SetPixel profiling**  
+1024 x 1024 Bitmap         SetPixel: 2054ms  
+1024 x 1024 FastBitmap     SetPixel: 398ms  
+1024 x 1024 FastBitmap Int SetPixel: 331ms  
+
+Results: FastBitmap **6,21x** faster
+
+**GetPixel profiling**  
+1024 x 1024 Bitmap         GetPixel: 1498ms  
+1024 x 1024 FastBitmap     GetPixel: 382ms  
+1024 x 1024 FastBitmap Int GetPixel: 327ms  
+
+Results: FastBitmap **4,58x** faster  
+
+**Bitmap copying profiling**  
+1024 x 1024 Bitmap     SetPixel:    3038ms  
+1024 x 1024 FastBitmap CopyPixels:  6ms  
+
+Results: FastBitmap **506,33x** faster  
+
+**Bitmap clearing profiling**  
+1024 x 1024 Bitmap     SetPixel: 1795ms  
+1024 x 1024 FastBitmap Clear:    5ms  
+Results: FastBitmap **359,00x** faster  
