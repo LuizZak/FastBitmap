@@ -27,7 +27,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 
-namespace Pixelaria.Utils
+namespace FastBitmap
 {
     /// <summary>
     /// Encapsulates a Bitmap for fast bitmap pixel operations using 32bpp images
