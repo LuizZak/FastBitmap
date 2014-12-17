@@ -7,6 +7,7 @@ It provides operations for setting/getting pixel colors, copying regions accross
 
 This project contains the FastBitmap class and acompanying unit test suite.
 
+**Note: This code currently only works with 32bpp bitmaps**
 
 Editing pixels of a bitmap is just as easy as:
 
