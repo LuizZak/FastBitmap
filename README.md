@@ -5,12 +5,6 @@ FastBitmap is a bitmap wrapper class that intends to provide fast bitmap read/wr
 
 It provides operations for setting/getting pixel colors, copying regions accross bitmaps, clearing whole bitmaps, and copying whole bitmaps.
 
-Note that to compile this class you must have the /unsafe compiler flag turned on in your project settings.
-
-This project contains the FastBitmap class and acompanying unit test suite.
-
-**Note: This code currently only works with 32bpp bitmaps**
-
 Editing pixels of a bitmap is just as easy as:
 
 ```C#
@@ -27,6 +21,11 @@ Editing pixels of a bitmap is just as easy as:
     // Don't forget to unlock!
     fastBitmap.Unlock();
 ```
+
+This project contains the FastBitmap class and acompanying unit test suite.  
+Note that to compile this class you must have the /unsafe compiler flag turned on in your project settings.
+
+**Note: This code currently only works with 32bpp bitmaps**
 
 
 Speed
