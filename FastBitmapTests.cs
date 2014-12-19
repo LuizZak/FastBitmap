@@ -443,9 +443,11 @@ namespace FastBitmap.Utils
             fastBitmap.Lock().Dispose();
             Assert.IsFalse(fastBitmap.Locked, "After disposing of the FastBitmapLocker object, the underlying fast bitmap must be unlocked");
 
-            using (fastBitmap.Lock())
+            using (var locker = fastBitmap.Lock())
             {
                 fastBitmap.SetPixel(0, 0, 0);
+
+                Assert.AreEqual(fastBitmap, locker.FastBitmap, "The fast bitmap referenced in the fast bitmap locker must be the one that had the original Lock() call");
             }
 
             Assert.IsFalse(fastBitmap.Locked, "After disposing of the FastBitmapLocker object, the underlying fast bitmap must be unlocked");
@@ -488,6 +490,79 @@ namespace FastBitmap.Utils
                 for (int x = 0; x < bitmap.Width; x++)
                 {
                     Assert.AreEqual(bitmap.GetPixel(x, y).ToArgb(), pixels[y * bitmap.Width + x], "");
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestCopyFromArray()
+        {
+            Bitmap bitmap = new Bitmap(4, 4);
+            int[] colors =
+            {
+                0xFFFFFF, 0xFFFFEF, 0xABABAB, 0xABCDEF,
+                0x111111, 0x123456, 0x654321, 0x000000,
+                0xFFFFFF, 0xFFFFEF, 0xABABAB, 0xABCDEF,
+                0x111111, 0x123456, 0x654321, 0x000000
+            };
+
+            using (var fastBitmap = bitmap.FastLock())
+            {
+                fastBitmap.CopyFromArray(colors);
+            }
+
+            // Test now the resulting bitmap
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    int index = y * bitmap.Width + x;
+
+                    Assert.AreEqual(colors[index], bitmap.GetPixel(x, y).ToArgb(),
+                        "After a call to CopyFromArray, the values provided on the on the array must match the values in the bitmap pixels");
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestCopyFromArrayIgnoreZeroes()
+        {
+            Bitmap bitmap = new Bitmap(4, 4);
+
+            FillBitmapRegion(bitmap, new Rectangle(0, 0, bitmap.Width, bitmap.Height), Color.Red);
+
+            int[] colors =
+            {
+                0xFFFFFF, 0xFFFFEF, 0xABABAB, 0xABCDEF,
+                0x111111, 0x123456, 0x654321, 0x000000,
+                0x000000, 0xFFFFEF, 0x000000, 0xABCDEF,
+                0x000000, 0x000000, 0x654321, 0x000000
+            };
+
+            using (var fastBitmap = bitmap.FastLock())
+            {
+                fastBitmap.CopyFromArray(colors, true);
+            }
+
+            // Test now the resulting bitmap
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    int index = y * bitmap.Width + x;
+                    int arrayColor = colors[index];
+                    int bitmapColor = bitmap.GetPixel(x, y).ToArgb();
+
+                    if(arrayColor != 0)
+                    {
+                        Assert.AreEqual(arrayColor, bitmapColor,
+                            "After a call to CopyFromArray(_, true), the non-zeroes values provided on the on the array must match the values in the bitmap pixels");
+                    }
+                    else
+                    {
+                        Assert.AreEqual(Color.Red.ToArgb(), bitmapColor,
+                            "After a call to CopyFromArray(_, true), the 0 values on the original array must not be copied over");
+                    }
                 }
             }
         }
@@ -553,21 +628,22 @@ namespace FastBitmap.Utils
             {
                 fastBitmap.GetPixel(-1, -1);
                 Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixel, an exception must be thrown");
-            } catch (ArgumentException) { }
+            }
+            catch (ArgumentOutOfRangeException) { }
 
             try
             {
                 fastBitmap.GetPixel(fastBitmap.Width, 0);
                 Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixel, an exception must be thrown");
             }
-            catch (ArgumentException) { }
+            catch (ArgumentOutOfRangeException) { }
 
             try
             {
                 fastBitmap.GetPixel(0, fastBitmap.Height);
                 Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixel, an exception must be thrown");
             }
-            catch (ArgumentException) { }
+            catch (ArgumentOutOfRangeException) { }
 
             fastBitmap.GetPixel(fastBitmap.Width - 1, fastBitmap.Height - 1);
         }
@@ -585,21 +661,21 @@ namespace FastBitmap.Utils
                 fastBitmap.SetPixel(-1, -1, 0);
                 Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixel, an exception must be thrown");
             }
-            catch (ArgumentException) { }
+            catch (ArgumentOutOfRangeException) { }
 
             try
             {
                 fastBitmap.SetPixel(fastBitmap.Width, 0, 0);
                 Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixel, an exception must be thrown");
             }
-            catch (ArgumentException) { }
+            catch (ArgumentOutOfRangeException) { }
 
             try
             {
                 fastBitmap.SetPixel(0, fastBitmap.Height, 0);
                 Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixel, an exception must be thrown");
             }
-            catch (ArgumentException) { }
+            catch (ArgumentOutOfRangeException) { }
 
             fastBitmap.SetPixel(fastBitmap.Width - 1, fastBitmap.Height - 1, 0);
         }
@@ -614,6 +690,30 @@ namespace FastBitmap.Utils
             Rectangle targetRectangle = new Rectangle(0, 0, 64, 64);
 
             FastBitmap.CopyRegion(bitmap, bitmap, sourceRectangle, targetRectangle);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof (ArgumentException),
+            "an ArgumentException exception must be raised when calling CopyFromArray() with an array of colors that does not match the pixel count of the bitmap")]
+        public void TestCopyFromArrayMismatchedLengthException()
+        {
+            Bitmap bitmap = new Bitmap(4, 4);
+
+            FillBitmapRegion(bitmap, new Rectangle(0, 0, bitmap.Width, bitmap.Height), Color.Red);
+
+            int[] colors =
+            {
+                0xFFFFFF, 0xFFFFEF, 0xABABAB, 0xABCDEF,
+                0x111111, 0x123456, 0x654321, 0x000000,
+                0x000000, 0xFFFFEF, 0x000000, 0xABCDEF,
+                0x000000, 0x000000, 0x654321, 0x000000,
+                0x000000, 0x000000, 0x654321, 0x000000
+            };
+
+            using (var fastBitmap = bitmap.FastLock())
+            {
+                fastBitmap.CopyFromArray(colors, true);
+            }
         }
 
         #endregion
@@ -647,6 +747,23 @@ namespace FastBitmap.Utils
             }
             fastBitmap.Unlock();
             return bitmap;
+        }
+
+        /// <summary>
+        /// Fills a rectangle region of bitmap with a specified color
+        /// </summary>
+        /// <param name="bitmap">The bitmap to operate on</param>
+        /// <param name="region">The region to fill on the bitmap</param>
+        /// <param name="color">The color to fill the bitmap with</param>
+        public static void FillBitmapRegion(Bitmap bitmap, Rectangle region, Color color)
+        {
+            for (int y = Math.Max(0, region.Top); y < Math.Min(bitmap.Height, region.Bottom); y++)
+            {
+                for (int x = Math.Max(0, region.Left); x < Math.Min(bitmap.Width, region.Right); x++)
+                {
+                    bitmap.SetPixel(x, y, color);
+                }
+            }
         }
 
         /// <summary>
