@@ -1,5 +1,6 @@
 FastBitmap - The Fast C# Bitmap Layer
 =====================================
+Based on work found on Visual C# Kicks: http://www.vcskicks.com/fast-image-processing.php
 
 FastBitmap is a bitmap wrapper class that intends to provide fast bitmap read/write operations on top of a safe layer of abstraction.
 
