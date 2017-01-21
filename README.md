@@ -23,7 +23,7 @@ Or alternatively, albeit longer:
 
 ```C#
     Bitmap bitmap = new Bitmap(64, 64);
-    FastBitmap fastBitmap = new FastBitmap(bitmap)
+    FastBitmap fastBitmap = new FastBitmap(bitmap);
     
     // Locking bitmap before doing operations
     fastBitmap.Lock();
