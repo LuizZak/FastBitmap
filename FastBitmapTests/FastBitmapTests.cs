@@ -733,7 +733,7 @@ namespace FastBitmapTests
         {
             if (seed == -1)
             {
-                seed = _seedRandom.Next();
+                seed = SeedRandom.Next();
             }
             var bitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb);
             var fastBitmap = new FastBitmap(bitmap);
@@ -852,6 +852,6 @@ namespace FastBitmapTests
         /// <summary>
         /// Random number generator used to randomize seeds for image generation when none are provided
         /// </summary>
-        private static readonly Random _seedRandom = new Random();
+        private static readonly Random SeedRandom = new Random();
     }
 }
