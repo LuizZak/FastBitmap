@@ -44,6 +44,14 @@ Note that to compile this class you must have the /unsafe compiler flag turned o
 
 **Note: This code currently only works with 32bpp bitmaps**
 
+Installation
+---
+
+FastBitmap is available as a [Nuget package](https://www.nuget.org/packages/FastBitmapLib):
+
+```
+PM > Install-Package FastBitmapLib
+```
 
 Speed
 ------
