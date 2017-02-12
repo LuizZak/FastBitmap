@@ -1,5 +1,8 @@
 ﻿/*
-    Pixelaria
+    FastBitmapLib
+
+    The MIT License (MIT)
+
     Copyright (C) 2013 Luiz Fernando Silva
 
     This program is free software; you can redistribute it and/or modify
