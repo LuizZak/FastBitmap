@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>LuizZak.Imaging.FastBitmapLib</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>Luiz Fernando</authors>
+    <owners>Luiz Fernando</owners>
+    <licenseUrl>https://github.com/LuizZak/FastBitmap/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/LuizZak/FastBitmap/</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>$description$</description>
+    <releaseNotes>Initial release.</releaseNotes>
+    <copyright>Copyright 2017</copyright>
+    <tags>imaging bitmap</tags>
+  </metadata>
+</package>
