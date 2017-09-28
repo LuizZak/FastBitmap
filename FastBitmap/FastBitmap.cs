@@ -53,7 +53,7 @@ namespace FastBitmapLib
         /// <summary>
         /// The first pixel of the bitmap
         /// </summary>
-        private int *_scan0;
+        private int* _scan0;
 
         /// <summary>
         /// Gets the width of this FastBitmap object
@@ -415,7 +415,7 @@ namespace FastBitmapLib
         public void Clear(int color)
         {
             bool unlockAfter = false;
-            if(!Locked)
+            if (!Locked)
             {
                 Lock();
                 unlockAfter = true;
@@ -425,33 +425,41 @@ namespace FastBitmapLib
             int count = Width * Height;
             int* curScan = _scan0;
 
-            // Defines the ammount of assignments that the main while() loop is performing per loop.
-            // The value specified here must match the number of assignment statements inside that loop
-            const int assignsPerLoop = 8;
-
-            int rem = count % assignsPerLoop;
-            count /= assignsPerLoop;
-
-            while (count-- > 0)
+            // Uniform color pixel values can be mem-set straight away
+            if ((color & 0xFF) == ((color >> 8) & 0xFF) && (color & 0xFF) == ((color >> 16) & 0xFF) && (color & 0xFF) == ((color >> 24) & 0xFF))
             {
-                *(curScan++) = color;
-                *(curScan++) = color;
-                *(curScan++) = color;
-                *(curScan++) = color;
-
-                *(curScan++) = color;
-                *(curScan++) = color;
-                *(curScan++) = color;
-                *(curScan++) = color;
+                memset(_scan0, color & 0xFF, (ulong)(Height * Stride * BytesPerPixel));
             }
-            while (rem-- > 0)
+            else
             {
-                *(curScan++) = color;
-            }
+                // Defines the ammount of assignments that the main while() loop is performing per loop.
+                // The value specified here must match the number of assignment statements inside that loop
+                const int assignsPerLoop = 8;
 
-            if (unlockAfter)
-            {
-                Unlock();
+                int rem = count % assignsPerLoop;
+                count /= assignsPerLoop;
+
+                while (count-- > 0)
+                {
+                    *(curScan++) = color;
+                    *(curScan++) = color;
+                    *(curScan++) = color;
+                    *(curScan++) = color;
+
+                    *(curScan++) = color;
+                    *(curScan++) = color;
+                    *(curScan++) = color;
+                    *(curScan++) = color;
+                }
+                while (rem-- > 0)
+                {
+                    *(curScan++) = color;
+                }
+
+                if (unlockAfter)
+                {
+                    Unlock();
+                }
             }
         }
 
@@ -502,20 +510,50 @@ namespace FastBitmapLib
                 return;
             }
 
-            // Prepare a horizontal slice of pixels that will be copied over each horizontal row down.
-            int[] row = new int[region.Width];
             ulong strideWidth = (ulong)region.Width * BytesPerPixel;
 
-            fixed (int* pRow = row)
+            // Uniform color pixel values can be mem-set straight away
+            if ((color & 0xFF) == ((color >> 8) & 0xFF) && (color & 0xFF) == ((color >> 16) & 0xFF) &&
+                (color & 0xFF) == ((color >> 24) & 0xFF))
             {
-                for (int i = 0; i < region.Width; i++)
-                {
-                    pRow[i] = color;
-                }
-
                 for (int y = minY; y < maxY; y++)
                 {
-                    memcpy(_scan0 + minX + y * Stride, pRow, strideWidth);
+                    memset(_scan0 + minX + y * Stride, color & 0xFF, strideWidth);
+                }
+            }
+            else
+            {
+                // Prepare a horizontal slice of pixels that will be copied over each horizontal row down.
+                int[] row = new int[region.Width];
+
+                fixed (int* pRow = row)
+                {
+                    int count = region.Width;
+                    int rem = count % 8;
+                    count /= 8;
+                    int* pSrc = pRow;
+                    while (count-- > 0)
+                    {
+                        *pSrc++ = color;
+                        *pSrc++ = color;
+                        *pSrc++ = color;
+                        *pSrc++ = color;
+
+                        *pSrc++ = color;
+                        *pSrc++ = color;
+                        *pSrc++ = color;
+                        *pSrc++ = color;
+                    }
+                    while (rem-- > 0)
+                    {
+                        *pSrc++ = color;
+                    }
+
+                    int* sx = _scan0 + minX;
+                    for (int y = minY; y < maxY; y++)
+                    {
+                        memcpy(sx + y * Stride, pRow, strideWidth);
+                    }
                 }
             }
         }
@@ -608,7 +646,7 @@ namespace FastBitmapLib
                 return false;
 
             using (FastBitmap fastSource = source.FastLock(),
-                              fastTarget = target.FastLock())
+                fastTarget = target.FastLock())
             {
                 memcpy(fastTarget.Scan0, fastSource.Scan0, (ulong)(fastSource.Height * fastSource.Stride * BytesPerPixel));
             }
@@ -702,6 +740,10 @@ namespace FastBitmapLib
         [DllImport("msvcrt.dll", EntryPoint = "memcpy", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
         public static extern IntPtr memcpy(void* dest, void* src, ulong count);
 
+        // .NET wrapper to native call of 'memset'. Requires Microsoft Visual C++ Runtime installed
+        [DllImport("msvcrt.dll", EntryPoint = "memset", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
+        public static extern IntPtr memset(void* dest, int value, ulong count);
+
         /// <summary>
         /// Represents a disposable structure that is returned during Lock() calls, and unlocks the bitmap on Dispose calls
         /// </summary>
@@ -732,7 +774,7 @@ namespace FastBitmapLib
             /// </summary>
             public void Dispose()
             {
-                if(_fastBitmap.Locked)
+                if (_fastBitmap.Locked)
                     _fastBitmap.Unlock();
             }
         }
