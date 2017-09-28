@@ -25,7 +25,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
-
+using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using FastBitmapLib;
@@ -570,6 +570,80 @@ namespace FastBitmapTests
             }
         }
 
+        [TestMethod]
+        public void TestClearRegionSmall()
+        {
+            var bitmap = new Bitmap(16, 16);
+
+            FillBitmapRegion(bitmap, new Rectangle(0, 0, 16, 16), Color.Red);
+
+            using (var fastBitmap = bitmap.FastLock())
+            {
+                fastBitmap.ClearRegion(new Rectangle(1, 1, 4, 4), Color.White);
+            }
+
+            // Verify expected pixels
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    if (x >= 1 && x <= 4 && y >= 1 && y <= 4)
+                        Assert.AreEqual(bitmap.GetPixel(x, y).ToArgb(), Color.White.ToArgb(), $"{{{x},{y}}}");
+                    else
+                        Assert.AreEqual(bitmap.GetPixel(x, y).ToArgb(), Color.Red.ToArgb(), $"{{{x},{y}}}");
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestClearRegionEntireBitmap()
+        {
+            var bitmap = new Bitmap(16, 16);
+
+            FillBitmapRegion(bitmap, new Rectangle(0, 0, 16, 16), Color.Red);
+
+            using (var fastBitmap = bitmap.FastLock())
+            {
+                fastBitmap.ClearRegion(new Rectangle(0, 0, 16, 16), Color.White);
+            }
+
+            // Verify expected pixels
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    Assert.AreEqual(bitmap.GetPixel(x, y).ToArgb(), Color.White.ToArgb(), $"{{{x},{y}}}");
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestClearRegionRowBlockCopyOptimization()
+        {
+            var bitmap = new Bitmap(64, 64);
+
+            FillBitmapRegion(bitmap, new Rectangle(0, 0, 64, 64), Color.Red);
+
+            var region = new Rectangle(4, 4, 16, 16);
+
+            using (var fastBitmap = bitmap.FastLock())
+            {
+                fastBitmap.ClearRegion(region, Color.White);
+            }
+
+            // Verify expected pixels
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    if (x >= region.Left && x < region.Right && y >= region.Top && y < region.Bottom)
+                        Assert.AreEqual(bitmap.GetPixel(x, y).ToArgb(), Color.White.ToArgb(), $"{{{x},{y}}}");
+                    else
+                        Assert.AreEqual(bitmap.GetPixel(x, y).ToArgb(), Color.Red.ToArgb(), $"{{{x},{y}}}");
+                }
+            }
+        }
+
         #region Exception Tests
 
         [TestMethod]
@@ -848,7 +922,7 @@ namespace FastBitmapTests
                 }
             }
         }
-
+        
         /// <summary>
         /// Random number generator used to randomize seeds for image generation when none are provided
         /// </summary>

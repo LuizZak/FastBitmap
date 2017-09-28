@@ -456,6 +456,71 @@ namespace FastBitmapLib
         }
 
         /// <summary>
+        /// Clears a square region of this image w/ a given color
+        /// </summary>
+        /// <param name="region"></param>
+        /// <param name="color"></param>
+        public void ClearRegion(Rectangle region, Color color)
+        {
+            ClearRegion(region, color.ToArgb());
+        }
+
+        /// <summary>
+        /// Clears a square region of this image w/ a given color
+        /// </summary>
+        /// <param name="region"></param>
+        /// <param name="color"></param>
+        public void ClearRegion(Rectangle region, int color)
+        {
+            var thisReg = new Rectangle(0, 0, Width, Height);
+            if (!region.IntersectsWith(thisReg))
+                return;
+
+            // If the region covers the entire image, use faster Clear().
+            if (region == thisReg)
+            {
+                Clear(color);
+                return;
+            }
+
+            var minX = region.X;
+            var maxX = region.X + region.Width;
+
+            var minY = region.Y;
+            var maxY = region.Y + region.Height;
+
+            // Bail out of optimization if there's too few rows to make this worth it
+            if (maxY - minY < 16)
+            {
+                for (int y = minY; y < maxY; y++)
+                {
+                    for (int x = minX; x < maxX; x++)
+                    {
+                        *(_scan0 + x + y * Stride) = color;
+                    }
+                }
+                return;
+            }
+
+            // Prepare a horizontal slice of pixels that will be copied over each horizontal row down.
+            int[] row = new int[region.Width];
+            ulong strideWidth = (ulong)region.Width * BytesPerPixel;
+
+            fixed (int* pRow = row)
+            {
+                for (int i = 0; i < region.Width; i++)
+                {
+                    pRow[i] = color;
+                }
+
+                for (int y = minY; y < maxY; y++)
+                {
+                    memcpy(_scan0 + minX + y * Stride, pRow, strideWidth);
+                }
+            }
+        }
+
+        /// <summary>
         /// Copies a region of the source bitmap into this fast bitmap
         /// </summary>
         /// <param name="source">The source image to copy</param>
