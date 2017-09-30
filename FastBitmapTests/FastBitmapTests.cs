@@ -175,9 +175,9 @@ namespace FastBitmapTests
             // fast path that simply mem-sets each row of the target image
 
             {
-                var bitmap = new Bitmap(64, 64);
+                var bitmap = new Bitmap(63, 63); // Non-dibisible by 8 bitmap, used to test loop unrolling
 
-                FillBitmapRegion(bitmap, new Rectangle(0, 0, 64, 64), Color.Red);
+                FillBitmapRegion(bitmap, new Rectangle(0, 0, 63, 63), Color.Red);
                 
                 using (var fastBitmap = bitmap.FastLock())
                 {
@@ -197,7 +197,7 @@ namespace FastBitmapTests
             {
                 // Now try with a black transparent colors
 
-                var bitmap = new Bitmap(64, 64);
+                var bitmap = new Bitmap(63, 63);
 
                 FillBitmapRegion(bitmap, new Rectangle(0, 0, 64, 64), Color.Red);
                 
@@ -669,9 +669,9 @@ namespace FastBitmapTests
         [TestMethod]
         public void TestClearRegionRowBlockCopyOptimization()
         {
-            var bitmap = new Bitmap(64, 64);
+            var bitmap = new Bitmap(63, 63); // Non-dibisible by 8 bitmap, used to test loop unrolling
 
-            FillBitmapRegion(bitmap, new Rectangle(0, 0, 64, 64), Color.Red);
+            FillBitmapRegion(bitmap, new Rectangle(0, 0, 63, 63), Color.Red);
 
             var region = new Rectangle(4, 4, 16, 16);
 
@@ -701,9 +701,9 @@ namespace FastBitmapTests
             // fast path that simply mem-sets each row of the target image
 
             {
-                var bitmap = new Bitmap(64, 64);
+                var bitmap = new Bitmap(63, 63); // Non-dibisible by 8 bitmap, used to test loop unrolling
 
-                FillBitmapRegion(bitmap, new Rectangle(0, 0, 64, 64), Color.Red);
+                FillBitmapRegion(bitmap, new Rectangle(0, 0, 63, 63), Color.Red);
 
                 var region = new Rectangle(4, 4, 16, 16);
 
@@ -728,9 +728,9 @@ namespace FastBitmapTests
             {
                 // Now try with a black transparent colors
 
-                var bitmap = new Bitmap(64, 64);
+                var bitmap = new Bitmap(63, 63);
 
-                FillBitmapRegion(bitmap, new Rectangle(0, 0, 64, 64), Color.Red);
+                FillBitmapRegion(bitmap, new Rectangle(0, 0, 63, 63), Color.Red);
 
                 var region = new Rectangle(4, 4, 16, 16);
 
