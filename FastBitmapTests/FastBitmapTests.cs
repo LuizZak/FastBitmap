@@ -167,6 +167,56 @@ namespace FastBitmapTests
             }
         }
 
+        [TestMethod]
+        public void TestClearBitmapMemSetOptimization()
+        {
+            // If a provided color has the same byte values for each component
+            // (e.g. 0xFFFFFFFF, 0xABABABAB, 0x66666666, etc.) the code takes a
+            // fast path that simply mem-sets each row of the target image
+
+            {
+                var bitmap = new Bitmap(64, 64);
+
+                FillBitmapRegion(bitmap, new Rectangle(0, 0, 64, 64), Color.Red);
+                
+                using (var fastBitmap = bitmap.FastLock())
+                {
+                    fastBitmap.Clear(Color.White);
+                }
+
+                // Verify expected pixels
+                for (int y = 0; y < bitmap.Height; y++)
+                {
+                    for (int x = 0; x < bitmap.Width; x++)
+                    {
+                        Assert.AreEqual(bitmap.GetPixel(x, y).ToArgb(), Color.White.ToArgb(), $"{{{x},{y}}}");
+                    }
+                }
+            }
+
+            {
+                // Now try with a black transparent colors
+
+                var bitmap = new Bitmap(64, 64);
+
+                FillBitmapRegion(bitmap, new Rectangle(0, 0, 64, 64), Color.Red);
+                
+                using (var fastBitmap = bitmap.FastLock())
+                {
+                    fastBitmap.Clear(Color.FromArgb(0));
+                }
+
+                // Verify expected pixels
+                for (int y = 0; y < bitmap.Height; y++)
+                {
+                    for (int x = 0; x < bitmap.Width; x++)
+                    {
+                        Assert.AreEqual(bitmap.GetPixel(x, y).ToArgb(), 0, $"{{{x},{y}}}");
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// Tests the behavior of the GetPixel() method by comparing the results from it to the results of the native Bitmap.GetPixel()
         /// </summary>
@@ -627,7 +677,7 @@ namespace FastBitmapTests
 
             using (var fastBitmap = bitmap.FastLock())
             {
-                fastBitmap.ClearRegion(region, Color.White);
+                fastBitmap.ClearRegion(region, Color.Blue);
             }
 
             // Verify expected pixels
@@ -636,9 +686,69 @@ namespace FastBitmapTests
                 for (int x = 0; x < bitmap.Width; x++)
                 {
                     if (x >= region.Left && x < region.Right && y >= region.Top && y < region.Bottom)
-                        Assert.AreEqual(bitmap.GetPixel(x, y).ToArgb(), Color.White.ToArgb(), $"{{{x},{y}}}");
+                        Assert.AreEqual(bitmap.GetPixel(x, y).ToArgb(), Color.Blue.ToArgb(), $"{{{x},{y}}}");
                     else
                         Assert.AreEqual(bitmap.GetPixel(x, y).ToArgb(), Color.Red.ToArgb(), $"{{{x},{y}}}");
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestClearRegionMemSetOptimization()
+        {
+            // If a provided color has the same byte values for each component
+            // (e.g. 0xFFFFFFFF, 0xABABABAB, 0x66666666, etc.) the code takes a
+            // fast path that simply mem-sets each row of the target image
+
+            {
+                var bitmap = new Bitmap(64, 64);
+
+                FillBitmapRegion(bitmap, new Rectangle(0, 0, 64, 64), Color.Red);
+
+                var region = new Rectangle(4, 4, 16, 16);
+
+                using (var fastBitmap = bitmap.FastLock())
+                {
+                    fastBitmap.ClearRegion(region, Color.White);
+                }
+
+                // Verify expected pixels
+                for (int y = 0; y < bitmap.Height; y++)
+                {
+                    for (int x = 0; x < bitmap.Width; x++)
+                    {
+                        if (x >= region.Left && x < region.Right && y >= region.Top && y < region.Bottom)
+                            Assert.AreEqual(bitmap.GetPixel(x, y).ToArgb(), Color.White.ToArgb(), $"{{{x},{y}}}");
+                        else
+                            Assert.AreEqual(bitmap.GetPixel(x, y).ToArgb(), Color.Red.ToArgb(), $"{{{x},{y}}}");
+                    }
+                }
+            }
+
+            {
+                // Now try with a black transparent colors
+
+                var bitmap = new Bitmap(64, 64);
+
+                FillBitmapRegion(bitmap, new Rectangle(0, 0, 64, 64), Color.Red);
+
+                var region = new Rectangle(4, 4, 16, 16);
+
+                using (var fastBitmap = bitmap.FastLock())
+                {
+                    fastBitmap.ClearRegion(region, Color.FromArgb(0));
+                }
+
+                // Verify expected pixels
+                for (int y = 0; y < bitmap.Height; y++)
+                {
+                    for (int x = 0; x < bitmap.Width; x++)
+                    {
+                        if (x >= region.Left && x < region.Right && y >= region.Top && y < region.Bottom)
+                            Assert.AreEqual(bitmap.GetPixel(x, y).ToArgb(), 0, $"{{{x},{y}}}");
+                        else
+                            Assert.AreEqual(bitmap.GetPixel(x, y).ToArgb(), Color.Red.ToArgb(), $"{{{x},{y}}}");
+                    }
                 }
             }
         }
