@@ -38,7 +38,7 @@ namespace FastBitmapLib
         /// <summary>
         /// Specifies the number of bytes available per pixel of the bitmap object being manipulated
         /// </summary>
-        private const int BytesPerPixel = 4;
+        public const int BytesPerPixel = 4;
 
         /// <summary>
         /// The Bitmap object encapsulated on this FastBitmap
@@ -188,7 +188,7 @@ namespace FastBitmapLib
         {
             // Lock the bitmap's bits
             _bitmapData = _bitmap.LockBits(rect, lockMode, _bitmap.PixelFormat);
-
+            
             _scan0 = (int*)_bitmapData.Scan0;
             Stride = _bitmapData.Stride / BytesPerPixel;
 
@@ -731,16 +731,22 @@ namespace FastBitmapLib
 
             return slicedBitmap;
         }
-
-        // .NET wrapper to native call of 'memcpy'. Requires Microsoft Visual C++ Runtime installed
+        
+        /// <summary>
+        /// .NET wrapper to native call of 'memcpy'. Requires Microsoft Visual C++ Runtime installed
+        /// </summary>
         [DllImport("msvcrt.dll", EntryPoint = "memcpy", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
         public static extern IntPtr memcpy(IntPtr dest, IntPtr src, ulong count);
-
-        // .NET wrapper to native call of 'memcpy'. Requires Microsoft Visual C++ Runtime installed
+        
+        /// <summary>
+        /// .NET wrapper to native call of 'memcpy'. Requires Microsoft Visual C++ Runtime installed
+        /// </summary>
         [DllImport("msvcrt.dll", EntryPoint = "memcpy", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
         public static extern IntPtr memcpy(void* dest, void* src, ulong count);
-
-        // .NET wrapper to native call of 'memset'. Requires Microsoft Visual C++ Runtime installed
+        
+        /// <summary>
+        /// .NET wrapper to native call of 'memset'. Requires Microsoft Visual C++ Runtime installed
+        /// </summary>
         [DllImport("msvcrt.dll", EntryPoint = "memset", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
         public static extern IntPtr memset(void* dest, int value, ulong count);
 
