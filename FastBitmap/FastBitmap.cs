@@ -426,9 +426,10 @@ namespace FastBitmapLib
             int* curScan = _scan0;
 
             // Uniform color pixel values can be mem-set straight away
-            if ((color & 0xFF) == ((color >> 8) & 0xFF) && (color & 0xFF) == ((color >> 16) & 0xFF) && (color & 0xFF) == ((color >> 24) & 0xFF))
+            int component = (color & 0xFF);
+            if (component == ((color >> 8) & 0xFF) && component == ((color >> 16) & 0xFF) && component == ((color >> 24) & 0xFF))
             {
-                memset(_scan0, color & 0xFF, (ulong)(Height * Stride * BytesPerPixel));
+                memset(_scan0, component, (ulong)(Height * Stride * BytesPerPixel));
             }
             else
             {
@@ -513,12 +514,13 @@ namespace FastBitmapLib
             ulong strideWidth = (ulong)region.Width * BytesPerPixel;
 
             // Uniform color pixel values can be mem-set straight away
-            if ((color & 0xFF) == ((color >> 8) & 0xFF) && (color & 0xFF) == ((color >> 16) & 0xFF) &&
-                (color & 0xFF) == ((color >> 24) & 0xFF))
+            int component = (color & 0xFF);
+            if (component == ((color >> 8) & 0xFF) && component == ((color >> 16) & 0xFF) &&
+                component == ((color >> 24) & 0xFF))
             {
                 for (int y = minY; y < maxY; y++)
                 {
-                    memset(_scan0 + minX + y * Stride, color & 0xFF, strideWidth);
+                    memset(_scan0 + minX + y * Stride, component, strideWidth);
                 }
             }
             else
