@@ -70,14 +70,7 @@ namespace FastBitmapLib
         /// Gets the pointer to the first pixel of the bitmap
         /// </summary>
         public IntPtr Scan0 => _bitmapData.Scan0;
-
-        /// <summary>
-        /// Gets a <see cref="Span{T}"/> for the raw colors on this fast bitmap.
-        /// 
-        /// May only be called when bitmap is in locked state.
-        /// </summary>
-        public Span<int> Colors => new Span<int>(_scan0, Math.Abs(_bitmapData.Stride) * _bitmap.Height / BytesPerPixel);
-
+        
         /// <summary>
         /// Gets the stride width of the bitmap
         /// </summary>
