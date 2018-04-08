@@ -28,6 +28,7 @@ using System.Drawing.Imaging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using FastBitmapLib;
+using JetBrains.Annotations;
 
 namespace FastBitmapTests
 {
@@ -37,6 +38,12 @@ namespace FastBitmapTests
     [TestClass]
     public class FastBitmapTests
     {
+        [TestInitialize]
+        public void TestInitialize()
+        {
+            BitmapSnapshot.RecordMode = false;
+        }
+
         [TestMethod]
         [ExpectedException(typeof(ArgumentException),
             "Providing a bitmap with a bitdepth different than 32bpp to a FastBitmap must return an ArgumentException")]
@@ -115,13 +122,13 @@ namespace FastBitmapTests
         [TestMethod]
         public void TestClearBitmap()
         {
-            var bitmap = GenerateRandomBitmap(63, 63); // Non-dibisible by 8 bitmap, used to test loop unrolling
+            var bitmap = GenerateRainbowBitmap(63, 63); // Non-dibisible by 8 bitmap, used to test loop unrolling
             FastBitmap.ClearBitmap(bitmap, Color.Red);
 
             // Loop through the image checking the pixels now
-            for (var y = 0; y < bitmap.Height; y++)
+            for (int y = 0; y < bitmap.Height; y++)
             {
-                for (var x = 0; x < bitmap.Width; x++)
+                for (int x = 0; x < bitmap.Width; x++)
                 {
                     if (bitmap.GetPixel(x, y).ToArgb() != Color.Red.ToArgb())
                     {
@@ -135,9 +142,9 @@ namespace FastBitmapTests
             FastBitmap.ClearBitmap(bitmap, Color.FromArgb(25, 12, 0, 42));
 
             // Loop through the image checking the pixels now
-            for (var y = 0; y < bitmap.Height; y++)
+            for (int y = 0; y < bitmap.Height; y++)
             {
-                for (var x = 0; x < bitmap.Width; x++)
+                for (int x = 0; x < bitmap.Width; x++)
                 {
                     if (bitmap.GetPixel(x, y).ToArgb() != Color.FromArgb(25, 12, 0, 42).ToArgb())
                     {
@@ -154,9 +161,9 @@ namespace FastBitmapTests
             Assert.IsFalse(fastBitmap.Locked, "After a successfull call to .Clear() on a fast bitmap previously unlocked, the .Locked property must be false");
 
             // Loop through the image checking the pixels now
-            for (var y = 0; y < bitmap.Height; y++)
+            for (int y = 0; y < bitmap.Height; y++)
             {
-                for (var x = 0; x < bitmap.Width; x++)
+                for (int x = 0; x < bitmap.Width; x++)
                 {
                     if (bitmap.GetPixel(x, y).ToArgb() != Color.FromArgb(25, 12, 0, 42).ToArgb())
                     {
@@ -223,15 +230,15 @@ namespace FastBitmapTests
         [TestMethod]
         public void TestGetPixel()
         {
-            var original = GenerateRandomBitmap(64, 64);
+            var original = GenerateRainbowBitmap(64, 64);
             var copy = original.Clone(new Rectangle(0, 0, 64, 64), original.PixelFormat);
 
             var fastOriginal = new FastBitmap(original);
             fastOriginal.Lock();
 
-            for (var y = 0; y < original.Height; y++)
+            for (int y = 0; y < original.Height; y++)
             {
-                for (var x = 0; x < original.Width; x++)
+                for (int x = 0; x < original.Width; x++)
                 {
                     Assert.AreEqual(fastOriginal.GetPixel(x, y).ToArgb(), copy.GetPixel(x, y).ToArgb(),
                         "Calls to FastBitmap.GetPixel() must return the same value as returned by Bitmap.GetPixel()");
@@ -255,11 +262,11 @@ namespace FastBitmapTests
 
             var r = new Random();
 
-            for (var y = 0; y < bitmap1.Height; y++)
+            for (int y = 0; y < bitmap1.Height; y++)
             {
-                for (var x = 0; x < bitmap1.Width; x++)
+                for (int x = 0; x < bitmap1.Width; x++)
                 {
-                    var intColor = r.Next(0xFFFFFF);
+                    int intColor = r.Next(0xFFFFFF);
                     var color = Color.FromArgb(intColor);
 
                     fastBitmap1.SetPixel(x, y, color);
@@ -287,11 +294,11 @@ namespace FastBitmapTests
 
             var r = new Random();
 
-            for (var y = 0; y < bitmap1.Height; y++)
+            for (int y = 0; y < bitmap1.Height; y++)
             {
-                for (var x = 0; x < bitmap1.Width; x++)
+                for (int x = 0; x < bitmap1.Width; x++)
                 {
-                    var intColor = r.Next(0xFFFFFF);
+                    int intColor = r.Next(0xFFFFFF);
                     var color = Color.FromArgb(intColor);
 
                     fastBitmap1.SetPixel(x, y, intColor);
@@ -311,7 +318,7 @@ namespace FastBitmapTests
         [TestMethod]
         public void TestValidCopyPixels()
         {
-            var bitmap1 = GenerateRandomBitmap(64, 64);
+            var bitmap1 = GenerateRainbowBitmap(64, 64);
             var bitmap2 = new Bitmap(64, 64);
 
             FastBitmap.CopyPixels(bitmap1, bitmap2);
@@ -352,14 +359,14 @@ namespace FastBitmapTests
         public void TestSimpleCopyRegion()
         {
             var canvasBitmap = new Bitmap(64, 64);
-            var copyBitmap = GenerateRandomBitmap(32, 32);
+            var copyBitmap = GenerateRainbowBitmap(32, 32);
 
             var sourceRectangle = new Rectangle(0, 0, 32, 32);
             var targetRectangle = new Rectangle(0, 0, 64, 64);
 
             FastBitmap.CopyRegion(copyBitmap, canvasBitmap, sourceRectangle, targetRectangle);
-
-            AssertCopyRegionEquals(canvasBitmap, copyBitmap, targetRectangle, sourceRectangle);
+            
+            BitmapSnapshot.Snapshot(canvasBitmap, TestContext);
         }
 
         /// <summary>
@@ -370,14 +377,14 @@ namespace FastBitmapTests
         public void TestComplexCopyRegion()
         {
             var canvasBitmap = new Bitmap(64, 64);
-            var copyBitmap = GenerateRandomBitmap(32, 32);
+            var copyBitmap = GenerateRainbowBitmap(32, 32);
 
             var sourceRectangle = new Rectangle(5, 5, 32, 32);
             var targetRectangle = new Rectangle(9, 9, 23, 48);
 
             FastBitmap.CopyRegion(copyBitmap, canvasBitmap, sourceRectangle, targetRectangle);
-
-            AssertCopyRegionEquals(canvasBitmap, copyBitmap, targetRectangle, sourceRectangle);
+            
+            BitmapSnapshot.Snapshot(canvasBitmap, TestContext);
         }
 
         /// <summary>
@@ -388,14 +395,14 @@ namespace FastBitmapTests
         public void TestClippingCopyRegion()
         {
             var canvasBitmap = new Bitmap(64, 64);
-            var copyBitmap = GenerateRandomBitmap(32, 32);
+            var copyBitmap = GenerateRainbowBitmap(32, 32);
 
             var sourceRectangle = new Rectangle(-5, 5, 32, 32);
             var targetRectangle = new Rectangle(40, 9, 23, 48);
 
             FastBitmap.CopyRegion(copyBitmap, canvasBitmap, sourceRectangle, targetRectangle);
-
-            AssertCopyRegionEquals(canvasBitmap, copyBitmap, targetRectangle, sourceRectangle);
+            
+            BitmapSnapshot.Snapshot(canvasBitmap, TestContext);
         }
 
         /// <summary>
@@ -406,14 +413,14 @@ namespace FastBitmapTests
         public void TestOutOfBoundsCopyRegion()
         {
             var canvasBitmap = new Bitmap(64, 64);
-            var copyBitmap = GenerateRandomBitmap(32, 32);
+            var copyBitmap = GenerateRainbowBitmap(32, 32);
 
             var sourceRectangle = new Rectangle(32, 0, 32, 32);
             var targetRectangle = new Rectangle(0, 0, 23, 48);
 
             FastBitmap.CopyRegion(copyBitmap, canvasBitmap, sourceRectangle, targetRectangle);
-
-            AssertCopyRegionEquals(canvasBitmap, copyBitmap, targetRectangle, sourceRectangle);
+            
+            BitmapSnapshot.Snapshot(canvasBitmap, TestContext);
         }
 
         /// <summary>
@@ -424,14 +431,14 @@ namespace FastBitmapTests
         public void TestInvalidCopyRegion()
         {
             var canvasBitmap = new Bitmap(64, 64);
-            var copyBitmap = GenerateRandomBitmap(32, 32);
+            var copyBitmap = GenerateRainbowBitmap(32, 32);
 
             var sourceRectangle = new Rectangle(0, 0, -1, 32);
             var targetRectangle = new Rectangle(0, 0, 23, 48);
 
             FastBitmap.CopyRegion(copyBitmap, canvasBitmap, sourceRectangle, targetRectangle);
-
-            AssertCopyRegionEquals(canvasBitmap, copyBitmap, targetRectangle, sourceRectangle);
+            
+            BitmapSnapshot.Snapshot(canvasBitmap, TestContext);
         }
 
         /// <summary>
@@ -470,14 +477,14 @@ namespace FastBitmapTests
             // 
 
             var canvasBitmap = new Bitmap(128, 32);
-            var copyBitmap = GenerateRandomBitmap(32, 64);
+            var copyBitmap = GenerateRainbowBitmap(32, 64);
 
             var sourceRectangle = new Rectangle(0, 0, 32, 64);
-            var targetRectangle = new Rectangle(32, -16, 32, 64);
+            var targetRectangle = new Rectangle(48, -16, 32, 64);
 
             FastBitmap.CopyRegion(copyBitmap, canvasBitmap, sourceRectangle, targetRectangle);
 
-            AssertCopyRegionEquals(canvasBitmap, copyBitmap, targetRectangle, sourceRectangle);
+            BitmapSnapshot.Snapshot(canvasBitmap, TestContext);
         }
 
         #endregion
@@ -530,16 +537,16 @@ namespace FastBitmapTests
         public void TestDataArray()
         {
             // TODO: Devise a way to test the returned array in a more consistent way, because currently this test only deals with ARGB pixel values because Bitmap.GetPixel().ToArgb() only returns 0xAARRGGBB format values
-            var bitmap = GenerateRandomBitmap(64, 64);
+            var bitmap = GenerateRainbowBitmap(64, 64);
             var fastBitmap = new FastBitmap(bitmap);
 
             Assert.IsFalse(fastBitmap.Locked, "After accessing the .Data property on a fast bitmap previously unlocked, the .Locked property must be false");
 
             var pixels = fastBitmap.DataArray;
 
-            for (var y = 0; y < bitmap.Height; y++)
+            for (int y = 0; y < bitmap.Height; y++)
             {
-                for (var x = 0; x < bitmap.Width; x++)
+                for (int x = 0; x < bitmap.Width; x++)
                 {
                     Assert.AreEqual(bitmap.GetPixel(x, y).ToArgb(), pixels[y * bitmap.Width + x], "");
                 }
@@ -564,11 +571,11 @@ namespace FastBitmapTests
             }
 
             // Test now the resulting bitmap
-            for (var y = 0; y < bitmap.Height; y++)
+            for (int y = 0; y < bitmap.Height; y++)
             {
-                for (var x = 0; x < bitmap.Width; x++)
+                for (int x = 0; x < bitmap.Width; x++)
                 {
-                    var index = y * bitmap.Width + x;
+                    int index = y * bitmap.Width + x;
 
                     Assert.AreEqual(colors[index], bitmap.GetPixel(x, y).ToArgb(),
                         "After a call to CopyFromArray, the values provided on the on the array must match the values in the bitmap pixels");
@@ -597,13 +604,13 @@ namespace FastBitmapTests
             }
 
             // Test now the resulting bitmap
-            for (var y = 0; y < bitmap.Height; y++)
+            for (int y = 0; y < bitmap.Height; y++)
             {
-                for (var x = 0; x < bitmap.Width; x++)
+                for (int x = 0; x < bitmap.Width; x++)
                 {
-                    var index = y * bitmap.Width + x;
-                    var arrayColor = colors[index];
-                    var bitmapColor = bitmap.GetPixel(x, y).ToArgb();
+                    int index = y * bitmap.Width + x;
+                    int arrayColor = colors[index];
+                    int bitmapColor = bitmap.GetPixel(x, y).ToArgb();
 
                     if (arrayColor != 0)
                     {
@@ -912,22 +919,65 @@ namespace FastBitmapTests
         /// <param name="height">The height of the image to generate</param>
         /// <param name="seed">The seed for the image, used to seed the random number generator that will generate the image contents</param>
         /// <returns>An image with the passed parameters</returns>
-        public static Bitmap GenerateRandomBitmap(int width, int height, int seed = -1)
+        public static Bitmap GenerateRainbowBitmap(int width, int height, int seed = 0)
         {
-            if (seed == -1)
+            uint RainbowRgb(float hue)
             {
-                seed = SeedRandom.Next();
+                //        |_    _|__ 1
+                //   Red: | \__/ |__ 0
+                //        |______|
+                //        | __   |__ 1
+                // Green: |/  \__|__ 0
+                //        |______|
+                //        |   __ |__ 1
+                //  Blue: |__/  \|__ 0
+                //        |_.__._|
+                //        0 |  | 1
+                //         1/3 |
+                //            2/3
+
+                float r;
+                float g;
+                float b;
+                if (hue < 1 / 3.0f)
+                {
+                    r = 2 - hue * 6;
+                    g = hue * 6;
+                    b = 0;
+                }
+                else if (hue < 2 / 3.0f)
+                {
+                    r = 0; 
+                    g = 4 - hue * 6; 
+                    b = hue * 6 - 2; 
+                }
+                else
+                {
+                    r = hue * 6 - 4; 
+                    g = 0;
+                    b = (1 - hue) * 6;
+                }
+
+                if (r > 1) r = 1;
+                if (g > 1) g = 1;
+                if (b > 1) b = 1;
+
+                uint rInt = (uint) (r * 255);
+                uint gInt = (uint) (g * 255);
+                uint bInt = (uint) (b * 255);
+
+                return ((uint)0xFF << 24) | ((rInt & 0xFF) << 16) | ((gInt & 0xFF) << 8) | (bInt & 0xFF);
             }
+
             var bitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb);
             var fastBitmap = new FastBitmap(bitmap);
             fastBitmap.Lock();
-            // Plot the image with random pixels now
-            var r = new Random(seed);
-            for (var y = 0; y < height; y++)
+            for (int y = 0; y < height; y++)
             {
-                for (var x = 0; x < width; x++)
+                for (int x = 0; x < width; x++)
                 {
-                    var pixelColor = (uint)(r.NextDouble() * 0xFFFFFFFF);
+                    uint pixelColor = RainbowRgb((float)x / width);
+
                     fastBitmap.SetPixel(x, y, pixelColor);
                 }
             }
@@ -941,11 +991,11 @@ namespace FastBitmapTests
         /// <param name="bitmap">The bitmap to operate on</param>
         /// <param name="region">The region to fill on the bitmap</param>
         /// <param name="color">The color to fill the bitmap with</param>
-        public static void FillBitmapRegion(Bitmap bitmap, Rectangle region, Color color)
+        public static void FillBitmapRegion([NotNull] Bitmap bitmap, Rectangle region, Color color)
         {
-            for (var y = Math.Max(0, region.Top); y < Math.Min(bitmap.Height, region.Bottom); y++)
+            for (int y = Math.Max(0, region.Top); y < Math.Min(bitmap.Height, region.Bottom); y++)
             {
-                for (var x = Math.Max(0, region.Left); x < Math.Min(bitmap.Width, region.Right); x++)
+                for (int x = Math.Max(0, region.Left); x < Math.Min(bitmap.Width, region.Right); x++)
                 {
                     bitmap.SetPixel(x, y, color);
                 }
@@ -958,83 +1008,20 @@ namespace FastBitmapTests
         /// <param name="bitmap1">The first bitmap object to compare</param>
         /// <param name="bitmap2">The second bitmap object to compare</param>
         /// <param name="message">The message to display when the comparision fails</param>
-        public static void AssertBitmapEquals(Bitmap bitmap1, Bitmap bitmap2, string message = "")
+        public static void AssertBitmapEquals([NotNull] Bitmap bitmap1, [NotNull] Bitmap bitmap2, string message = "")
         {
             if (bitmap1.PixelFormat != bitmap2.PixelFormat)
                 Assert.Fail(message);
 
-            for (var y = 0; y < bitmap1.Height; y++)
+            for (int y = 0; y < bitmap1.Height; y++)
             {
-                for (var x = 0; x < bitmap1.Width; x++)
+                for (int x = 0; x < bitmap1.Width; x++)
                 {
                     Assert.AreEqual(bitmap1.GetPixel(x, y).ToArgb(), bitmap2.GetPixel(x, y).ToArgb(), message);
                 }
             }
         }
 
-        /// <summary>
-        /// Asserts that the result of a copy region operation was successfull by analysing the source and target regions for pixel-by-pixel equalities
-        /// </summary>
-        /// <param name="canvasBitmap">The bitmap that was drawn into</param>
-        /// <param name="copyBitmap">The bitmap that was copied from</param>
-        /// <param name="targetRectangle">The region on the canvas bitmap that was drawn into</param>
-        /// <param name="sourceRectangle">The region from the source rectangle that was drawn</param>
-        /// <param name="message">The message to display on assertion error</param>
-        public static void AssertCopyRegionEquals(Bitmap canvasBitmap, Bitmap copyBitmap, Rectangle targetRectangle,
-            Rectangle sourceRectangle, string message = "Pixels of the target region must fully match the pixels from the origin region")
-        {
-            var srcBitmapRect = new Rectangle(0, 0, copyBitmap.Width, copyBitmap.Height);
-            var destBitmapRect = new Rectangle(0, 0, canvasBitmap.Width, canvasBitmap.Height);
-
-            // Check if the rectangle configuration doesn't generate invalid states or does not affect the target image
-            if (sourceRectangle.Width <= 0 || sourceRectangle.Height <= 0 || targetRectangle.Width <= 0 || targetRectangle.Height <= 0 ||
-                !srcBitmapRect.IntersectsWith(sourceRectangle) || !targetRectangle.IntersectsWith(destBitmapRect))
-                return;
-
-            // Find the areas of the first and second bitmaps that are going to be affected
-            srcBitmapRect = Rectangle.Intersect(sourceRectangle, srcBitmapRect);
-
-            // Clip the source rectangle on top of the destination rectangle in a way that clips out the regions of the original bitmap
-            // that will not be drawn on the destination bitmap for being out of bounds
-            srcBitmapRect = Rectangle.Intersect(srcBitmapRect, new Rectangle(sourceRectangle.X, sourceRectangle.Y, targetRectangle.Width, targetRectangle.Height));
-
-            destBitmapRect = Rectangle.Intersect(targetRectangle, destBitmapRect);
-
-            // Clipt the source bitmap region yet again here, this time against the available canvas bitmap rectangle
-            // We transpose the second rectangle by the source's X and Y because we want to clip the target rectangle in the source rectangle's coordinates
-            srcBitmapRect = Rectangle.Intersect(srcBitmapRect, new Rectangle(-targetRectangle.X + sourceRectangle.X, -targetRectangle.Y + sourceRectangle.Y, canvasBitmap.Width, canvasBitmap.Height));
-
-            // Calculate the rectangle containing the maximum possible area that is supposed to be affected by the copy region operation
-            var copyWidth = Math.Min(srcBitmapRect.Width, destBitmapRect.Width);
-            var copyHeight = Math.Min(srcBitmapRect.Height, destBitmapRect.Height);
-
-            if (copyWidth == 0 || copyHeight == 0)
-                return;
-
-            var srcStartX = srcBitmapRect.Left;
-            var srcStartY = srcBitmapRect.Top;
-
-            var destStartX = destBitmapRect.Left;
-            var destStartY = destBitmapRect.Top;
-
-            for (var y = 0; y < copyHeight; y++)
-            {
-                for (var x = 0; x < copyWidth; x++)
-                {
-                    var destX = destStartX;
-                    var destY = destStartY + y;
-
-                    var srcX = srcStartX;
-                    var srcY = srcStartY + y;
-
-                    Assert.AreEqual(copyBitmap.GetPixel(srcX, srcY).ToArgb(), canvasBitmap.GetPixel(destX, destY).ToArgb(), message);
-                }
-            }
-        }
-        
-        /// <summary>
-        /// Random number generator used to randomize seeds for image generation when none are provided
-        /// </summary>
-        private static readonly Random SeedRandom = new Random();
+        public TestContext TestContext { get; set; }
     }
 }
