@@ -154,26 +154,44 @@ namespace FastBitmapLib
         /// <exception cref="InvalidOperationException">The bitmap is already locked outside this fast bitmap</exception>
         public FastBitmapLocker Lock()
         {
+            return Lock((FastBitmapLockFormat) _bitmap.PixelFormat);
+        }
+
+        /// <summary>
+        /// Locks the bitmap to start the bitmap operations. If the bitmap is already locked,
+        /// an exception is thrown.
+        ///
+        /// The provided pixel format should be a 32bpp format.
+        /// </summary>
+        /// <param name="pixelFormat">A pixel format to use when locking the underlying bitmap</param>
+        /// <returns>A fast bitmap locked struct that will unlock the underlying bitmap after disposal</returns>
+        /// <exception cref="InvalidOperationException">The bitmap is already locked</exception>
+        /// <exception cref="Exception">The locking operation in the underlying bitmap failed</exception>
+        /// <exception cref="InvalidOperationException">The bitmap is already locked outside this fast bitmap</exception>
+        public FastBitmapLocker Lock(FastBitmapLockFormat pixelFormat)
+        {
             if (Locked)
             {
                 throw new InvalidOperationException("Unlock must be called before a Lock operation");
             }
 
-            return Lock(ImageLockMode.ReadWrite);
+            return Lock(ImageLockMode.ReadWrite, (PixelFormat) pixelFormat);
         }
 
         /// <summary>
         /// Locks the bitmap to start the bitmap operations
         /// </summary>
         /// <param name="lockMode">The lock mode to use on the bitmap</param>
+        /// <param name="pixelFormat">A pixel format to use when locking the underlying bitmap</param>
         /// <returns>A fast bitmap locked struct that will unlock the underlying bitmap after disposal</returns>
         /// <exception cref="System.Exception">The locking operation in the underlying bitmap failed</exception>
         /// <exception cref="InvalidOperationException">The bitmap is already locked outside this fast bitmap</exception>
-        private FastBitmapLocker Lock(ImageLockMode lockMode)
+        /// <exception cref="ArgumentException"><see cref="!:pixelFormat"/> is not a 32bpp format</exception>
+        private FastBitmapLocker Lock(ImageLockMode lockMode, PixelFormat pixelFormat)
         {
             var rect = new Rectangle(0, 0, _bitmap.Width, _bitmap.Height);
 
-            return Lock(lockMode, rect);
+            return Lock(lockMode, rect, pixelFormat);
         }
 
         /// <summary>
@@ -181,14 +199,16 @@ namespace FastBitmapLib
         /// </summary>
         /// <param name="lockMode">The lock mode to use on the bitmap</param>
         /// <param name="rect">The rectangle to lock</param>
+        /// <param name="pixelFormat">A pixel format to use when locking the underlying bitmap</param>
         /// <returns>A fast bitmap locked struct that will unlock the underlying bitmap after disposal</returns>
         /// <exception cref="System.ArgumentException">The provided region is invalid</exception>
         /// <exception cref="System.Exception">The locking operation in the underlying bitmap failed</exception>
         /// <exception cref="InvalidOperationException">The bitmap region is already locked</exception>
-        private FastBitmapLocker Lock(ImageLockMode lockMode, Rectangle rect)
+        /// <exception cref="ArgumentException"><see cref="!:pixelFormat"/> is not a 32bpp format</exception>
+        private FastBitmapLocker Lock(ImageLockMode lockMode, Rectangle rect, PixelFormat pixelFormat)
         {
             // Lock the bitmap's bits
-            _bitmapData = _bitmap.LockBits(rect, lockMode, _bitmap.PixelFormat);
+            _bitmapData = _bitmap.LockBits(rect, lockMode, pixelFormat);
             
             _scan0 = (int*)_bitmapData.Scan0;
             Stride = _bitmapData.Stride / BytesPerPixel;
@@ -790,6 +810,19 @@ namespace FastBitmapLib
     }
 
     /// <summary>
+    /// Describes a pixel format to use when locking a bitmap using <see cref="FastBitmap"/>.
+    /// </summary>
+    public enum FastBitmapLockFormat
+    {
+        /// <summary>Specifies that the format is 32 bits per pixel; 8 bits each are used for the red, green, and blue components. The remaining 8 bits are not used.</summary>
+        Format32bppRgb = 139273,
+        /// <summary>Specifies that the format is 32 bits per pixel; 8 bits each are used for the alpha, red, green, and blue components. The red, green, and blue components are premultiplied, according to the alpha component.</summary>
+        Format32bppPArgb = 925707,
+        /// <summary>Specifies that the format is 32 bits per pixel; 8 bits each are used for the alpha, red, green, and blue components.</summary>
+        Format32bppArgb = 2498570,
+    }
+
+    /// <summary>
     /// Static class that contains fast bitmap extension methdos for the Bitmap class
     /// </summary>
     public static class FastBitmapExtensions
@@ -803,6 +836,20 @@ namespace FastBitmapLib
         {
             var fast = new FastBitmap(bitmap);
             fast.Lock();
+
+            return fast;
+        }
+
+        /// <summary>
+        /// Locks this bitmap into memory and returns a FastBitmap that can be used to manipulate its pixels
+        /// </summary>
+        /// <param name="bitmap">The bitmap to lock</param>
+        /// <param name="lockFormat">The underlying pixel format to use when locking the bitmap</param>
+        /// <returns>A locked FastBitmap</returns>
+        public static FastBitmap FastLock(this Bitmap bitmap, FastBitmapLockFormat lockFormat)
+        {
+            var fast = new FastBitmap(bitmap);
+            fast.Lock(lockFormat);
 
             return fast;
         }

@@ -760,6 +760,39 @@ namespace FastBitmapTests
             }
         }
 
+        [TestMethod]
+        public void TestLockFormatArgbToPArgb()
+        {
+            var bitmap = new Bitmap(16, 16, PixelFormat.Format32bppArgb);
+            var fastBitmap = new FastBitmap(bitmap);
+
+            fastBitmap.Lock(FastBitmapLockFormat.Format32bppPArgb);
+
+            fastBitmap.Unlock();
+        }
+
+        [TestMethod]
+        public void TestLockFormatArgbToRgb()
+        {
+            var bitmap = new Bitmap(16, 16, PixelFormat.Format32bppArgb);
+            var fastBitmap = new FastBitmap(bitmap);
+
+            fastBitmap.Lock(FastBitmapLockFormat.Format32bppRgb);
+
+            fastBitmap.Unlock();
+        }
+
+        [TestMethod]
+        public void TestLockFormatArgbToArgb()
+        {
+            var bitmap = new Bitmap(16, 16, PixelFormat.Format32bppArgb);
+            var fastBitmap = new FastBitmap(bitmap);
+
+            fastBitmap.Lock(FastBitmapLockFormat.Format32bppArgb);
+
+            fastBitmap.Unlock();
+        }
+
         #region Exception Tests
 
         [TestMethod]
