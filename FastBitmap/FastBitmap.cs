@@ -72,9 +72,14 @@ namespace FastBitmapLib
         public IntPtr Scan0 => _bitmapData.Scan0;
         
         /// <summary>
-        /// Gets the stride width of the bitmap
+        /// Gets the stride width (in int32-sized values) of the bitmap
         /// </summary>
         public int Stride { get; private set; }
+
+        /// <summary>
+        /// Gets the stride width (in bytes) of the bitmap
+        /// </summary>
+        public int StrideInBytes { get; private set; }
 
         /// <summary>
         /// Gets a boolean value that states whether this FastBitmap is currently locked in memory
@@ -212,6 +217,7 @@ namespace FastBitmapLib
             
             _scan0 = (int*)_bitmapData.Scan0;
             Stride = _bitmapData.Stride / BytesPerPixel;
+            StrideInBytes = _bitmapData.Stride;
 
             Locked = true;
 

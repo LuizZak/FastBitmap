@@ -45,6 +45,19 @@ namespace FastBitmapTests
         }
 
         [TestMethod]
+        public void TestStride()
+        {
+            var bitmap = new Bitmap(64, 64);
+            var fastBitmap = new FastBitmap(bitmap);
+            fastBitmap.Lock();
+
+            Assert.AreEqual(fastBitmap.Stride, 64);
+            Assert.AreEqual(fastBitmap.StrideInBytes, 64 * 4);
+
+            fastBitmap.Unlock();
+        }
+
+        [TestMethod]
         [ExpectedException(typeof(ArgumentException),
             "Providing a bitmap with a bitdepth different than 32bpp to a FastBitmap must return an ArgumentException")]
         public void TestFastBitmapCreation()
