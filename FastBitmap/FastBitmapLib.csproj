@@ -7,7 +7,7 @@
     <Product>FastBitmap</Product>
     <Copyright>Copyright © Luiz Fernando 2017</Copyright>
     <Description>A fast C# Bitmap wrapping layer.</Description>
-    <Version>1.3.0</Version>
+    <Version>1.3.1</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>imaging bitmap</PackageTags>
@@ -18,9 +18,9 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Drawing.Common">
-      <Version>4.6.0-preview9.19421.4</Version>
+      <Version>4.5.1</Version>
     </PackageReference>
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.6.0-preview9.19421.4" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.2" />
 
   </ItemGroup>
 </Project>
