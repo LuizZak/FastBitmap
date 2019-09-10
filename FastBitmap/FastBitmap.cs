@@ -27,6 +27,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace FastBitmapLib
@@ -55,7 +56,7 @@ namespace FastBitmapLib
         /// The first pixel of the bitmap
         /// </summary>
         private int* _scan0;
-        
+
         /// <summary>
         /// Gets the width of this FastBitmap object
         /// </summary>
@@ -70,7 +71,7 @@ namespace FastBitmapLib
         /// Gets the pointer to the first pixel of the bitmap
         /// </summary>
         public IntPtr Scan0 => _bitmapData.Scan0;
-        
+
         /// <summary>
         /// Gets the stride width (in int32-sized values) of the bitmap
         /// </summary>
@@ -214,8 +215,8 @@ namespace FastBitmapLib
         {
             // Lock the bitmap's bits
             _bitmapData = _bitmap.LockBits(rect, lockMode, pixelFormat);
-            
-            _scan0 = (int*)_bitmapData.Scan0;
+
+            _scan0 = (int*) _bitmapData.Scan0;
             Stride = _bitmapData.Stride / BytesPerPixel;
             StrideInBytes = _bitmapData.Stride;
 
@@ -241,7 +242,7 @@ namespace FastBitmapLib
 
             Locked = false;
         }
-        
+
         /// <summary>
         /// Sets the pixel color at the given coordinates. If the bitmap was not locked beforehands,
         /// an exception is thrown
@@ -267,7 +268,7 @@ namespace FastBitmapLib
         /// <exception cref="ArgumentOutOfRangeException">The provided coordinates are out of bounds of the bitmap</exception>
         public void SetPixel(int x, int y, int color)
         {
-            SetPixel(x, y, unchecked((uint)color));
+            SetPixel(x, y, unchecked((uint) color));
         }
 
         /// <summary>
@@ -290,12 +291,13 @@ namespace FastBitmapLib
             {
                 throw new ArgumentOutOfRangeException(nameof(x), @"The X component must be >= 0 and < width");
             }
+
             if (y < 0 || y >= Height)
             {
                 throw new ArgumentOutOfRangeException(nameof(y), @"The Y component must be >= 0 and < height");
             }
 
-            *(uint*)(_scan0 + x + y * Stride) = color;
+            *(uint*) (_scan0 + x + y * Stride) = color;
         }
 
         /// <summary>
@@ -330,6 +332,7 @@ namespace FastBitmapLib
             {
                 throw new ArgumentOutOfRangeException(nameof(x), @"The X component must be >= 0 and < width");
             }
+
             if (y < 0 || y >= Height)
             {
                 throw new ArgumentOutOfRangeException(nameof(y), @"The Y component must be >= 0 and < height");
@@ -357,12 +360,13 @@ namespace FastBitmapLib
             {
                 throw new ArgumentOutOfRangeException(nameof(x), @"The X component must be >= 0 and < width");
             }
+
             if (y < 0 || y >= Height)
             {
                 throw new ArgumentOutOfRangeException(nameof(y), @"The Y component must be >= 0 and < height");
             }
 
-            return *((uint*)_scan0 + x + y * Stride);
+            return *((uint*) _scan0 + x + y * Stride);
         }
 
         /// <summary>
@@ -375,7 +379,8 @@ namespace FastBitmapLib
         {
             if (colors.Length != Width * Height)
             {
-                throw new ArgumentException(@"The number of colors of the given array mismatch the pixel count of the bitmap", nameof(colors));
+                throw new ArgumentException(@"The number of colors of the given array mismatch the pixel count of the bitmap",
+                    nameof(colors));
             }
 
             // Simply copy the argb values array
@@ -419,7 +424,13 @@ namespace FastBitmapLib
                 {
                     while (count-- > 0)
                     {
-                        if (*(s0s) == 0) { s0t++; s0s++; continue; }
+                        if (*(s0s) == 0)
+                        {
+                            s0t++;
+                            s0s++;
+                            continue;
+                        }
+
                         *(s0t++) = *(s0s++);
                     }
                 }
@@ -456,7 +467,7 @@ namespace FastBitmapLib
             int component = (color & 0xFF);
             if (component == ((color >> 8) & 0xFF) && component == ((color >> 16) & 0xFF) && component == ((color >> 24) & 0xFF))
             {
-                memset(_scan0, component, (ulong)(Height * Stride * BytesPerPixel));
+                memset(_scan0, component, (ulong) (Height * Stride * BytesPerPixel));
             }
             else
             {
@@ -479,6 +490,7 @@ namespace FastBitmapLib
                     *(curScan++) = color;
                     *(curScan++) = color;
                 }
+
                 while (rem-- > 0)
                 {
                     *(curScan++) = color;
@@ -535,10 +547,11 @@ namespace FastBitmapLib
                         *(_scan0 + x + y * Stride) = color;
                     }
                 }
+
                 return;
             }
 
-            ulong strideWidth = (ulong)region.Width * BytesPerPixel;
+            ulong strideWidth = (ulong) region.Width * BytesPerPixel;
 
             // Uniform color pixel values can be mem-set straight away
             int component = (color & 0xFF);
@@ -573,6 +586,7 @@ namespace FastBitmapLib
                         *pSrc++ = color;
                         *pSrc++ = color;
                     }
+
                     while (rem-- > 0)
                     {
                         *pSrc++ = color;
@@ -615,12 +629,14 @@ namespace FastBitmapLib
 
             // Clip the source rectangle on top of the destination rectangle in a way that clips out the regions of the original bitmap
             // that will not be drawn on the destination bitmap for being out of bounds
-            srcBitmapRect = Rectangle.Intersect(srcBitmapRect, new Rectangle(srcRect.X, srcRect.Y, destRect.Width, destRect.Height));
+            srcBitmapRect =
+                Rectangle.Intersect(srcBitmapRect, new Rectangle(srcRect.X, srcRect.Y, destRect.Width, destRect.Height));
 
             destBitmapRect = Rectangle.Intersect(destRect, destBitmapRect);
 
             // Clip the source bitmap region yet again here
-            srcBitmapRect = Rectangle.Intersect(srcBitmapRect, new Rectangle(-destRect.X + srcRect.X, -destRect.Y + srcRect.Y, Width, Height));
+            srcBitmapRect = Rectangle.Intersect(srcBitmapRect,
+                new Rectangle(-destRect.X + srcRect.X, -destRect.Y + srcRect.Y, Width, Height));
 
             // Calculate the rectangle containing the maximum possible area that is supposed to be affected by the copy region operation
             int copyWidth = Math.Min(srcBitmapRect.Width, destBitmapRect.Width);
@@ -637,7 +653,7 @@ namespace FastBitmapLib
 
             using (var fastSource = source.FastLock())
             {
-                ulong strideWidth = (ulong)copyWidth * BytesPerPixel;
+                ulong strideWidth = (ulong) copyWidth * BytesPerPixel;
 
                 // Perform copies of whole pixel rows
                 for (int y = 0; y < copyHeight; y++)
@@ -677,7 +693,7 @@ namespace FastBitmapLib
             using (FastBitmap fastSource = source.FastLock(),
                 fastTarget = target.FastLock())
             {
-                memcpy(fastTarget.Scan0, fastSource.Scan0, (ulong)(fastSource.Height * fastSource.Stride * BytesPerPixel));
+                memcpy(fastTarget.Scan0, fastSource.Scan0, (ulong) (fastSource.Height * fastSource.Stride * BytesPerPixel));
             }
 
             return true;
@@ -752,7 +768,8 @@ namespace FastBitmapLib
 
             if (sliceRectangle.IsEmpty)
             {
-                throw new ArgumentException(@"The provided region must not lie outside of the bitmap's region completely", nameof(region));
+                throw new ArgumentException(@"The provided region must not lie outside of the bitmap's region completely",
+                    nameof(region));
             }
 
             var slicedBitmap = new Bitmap(sliceRectangle.Width, sliceRectangle.Height);
@@ -760,24 +777,42 @@ namespace FastBitmapLib
 
             return slicedBitmap;
         }
-        
+
+#if NETSTANDARD
+        public static void memcpy(IntPtr dest, IntPtr src, ulong count)
+        {
+            Buffer.MemoryCopy(src.ToPointer(), dest.ToPointer(), count, count);
+        }
+
+        public static void memcpy(void* dest, void* src, ulong count)
+        {
+            Buffer.MemoryCopy(src, dest, count, count);
+        }
+
+        public static void memset(void* dest, int value, ulong count)
+        {
+            Unsafe.InitBlock(dest, (byte) value, (uint) count);
+        }
+#else
         /// <summary>
         /// .NET wrapper to native call of 'memcpy'. Requires Microsoft Visual C++ Runtime installed
         /// </summary>
         [DllImport("msvcrt.dll", EntryPoint = "memcpy", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
         public static extern IntPtr memcpy(IntPtr dest, IntPtr src, ulong count);
-        
+
         /// <summary>
         /// .NET wrapper to native call of 'memcpy'. Requires Microsoft Visual C++ Runtime installed
         /// </summary>
         [DllImport("msvcrt.dll", EntryPoint = "memcpy", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
         public static extern IntPtr memcpy(void* dest, void* src, ulong count);
-        
+
         /// <summary>
         /// .NET wrapper to native call of 'memset'. Requires Microsoft Visual C++ Runtime installed
         /// </summary>
         [DllImport("msvcrt.dll", EntryPoint = "memset", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
         public static extern IntPtr memset(void* dest, int value, ulong count);
+#endif
+
 
         /// <summary>
         /// Represents a disposable structure that is returned during Lock() calls, and unlocks the bitmap on Dispose calls
@@ -822,8 +857,10 @@ namespace FastBitmapLib
     {
         /// <summary>Specifies that the format is 32 bits per pixel; 8 bits each are used for the red, green, and blue components. The remaining 8 bits are not used.</summary>
         Format32bppRgb = 139273,
+
         /// <summary>Specifies that the format is 32 bits per pixel; 8 bits each are used for the alpha, red, green, and blue components. The red, green, and blue components are premultiplied, according to the alpha component.</summary>
         Format32bppPArgb = 925707,
+
         /// <summary>Specifies that the format is 32 bits per pixel; 8 bits each are used for the alpha, red, green, and blue components.</summary>
         Format32bppArgb = 2498570,
     }
