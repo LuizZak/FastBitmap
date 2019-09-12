@@ -1,18 +1,18 @@
 ﻿/*
     The MIT License (MIT)
-    
+
     Copyright (c) 2014 Luiz Fernando Silva
-    
+
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
     in the Software without restriction, including without limitation the rights
     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
     copies of the Software, and to permit persons to whom the Software is
     furnished to do so, subject to the following conditions:
-    
+
     The above copyright notice and this permission notice shall be included in
     all copies or substantial portions of the Software.
-    
+
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -198,7 +198,7 @@ namespace FastBitmapTests
                 var bitmap = new Bitmap(63, 63); // Non-dibisible by 8 bitmap, used to test loop unrolling
 
                 FillBitmapRegion(bitmap, new Rectangle(0, 0, 63, 63), Color.Red);
-                
+
                 using (var fastBitmap = bitmap.FastLock())
                 {
                     fastBitmap.Clear(Color.White);
@@ -220,7 +220,7 @@ namespace FastBitmapTests
                 var bitmap = new Bitmap(63, 63);
 
                 FillBitmapRegion(bitmap, new Rectangle(0, 0, 64, 64), Color.Red);
-                
+
                 using (var fastBitmap = bitmap.FastLock())
                 {
                     fastBitmap.Clear(Color.FromArgb(0));
@@ -378,7 +378,7 @@ namespace FastBitmapTests
             var targetRectangle = new Rectangle(0, 0, 64, 64);
 
             FastBitmap.CopyRegion(copyBitmap, canvasBitmap, sourceRectangle, targetRectangle);
-            
+
             BitmapSnapshot.Snapshot(canvasBitmap, TestContext);
         }
 
@@ -396,7 +396,7 @@ namespace FastBitmapTests
             var targetRectangle = new Rectangle(9, 9, 23, 48);
 
             FastBitmap.CopyRegion(copyBitmap, canvasBitmap, sourceRectangle, targetRectangle);
-            
+
             BitmapSnapshot.Snapshot(canvasBitmap, TestContext);
         }
 
@@ -414,7 +414,7 @@ namespace FastBitmapTests
             var targetRectangle = new Rectangle(40, 9, 23, 48);
 
             FastBitmap.CopyRegion(copyBitmap, canvasBitmap, sourceRectangle, targetRectangle);
-            
+
             BitmapSnapshot.Snapshot(canvasBitmap, TestContext);
         }
 
@@ -432,7 +432,7 @@ namespace FastBitmapTests
             var targetRectangle = new Rectangle(0, 0, 23, 48);
 
             FastBitmap.CopyRegion(copyBitmap, canvasBitmap, sourceRectangle, targetRectangle);
-            
+
             BitmapSnapshot.Snapshot(canvasBitmap, TestContext);
         }
 
@@ -450,7 +450,7 @@ namespace FastBitmapTests
             var targetRectangle = new Rectangle(0, 0, 23, 48);
 
             FastBitmap.CopyRegion(copyBitmap, canvasBitmap, sourceRectangle, targetRectangle);
-            
+
             BitmapSnapshot.Snapshot(canvasBitmap, TestContext);
         }
 
@@ -487,7 +487,7 @@ namespace FastBitmapTests
             // |     |xxxxx|     |
             // ------|-----|------
             //       -------
-            // 
+            //
 
             var canvasBitmap = new Bitmap(128, 32);
             var copyBitmap = GenerateRainbowBitmap(32, 64);
@@ -993,13 +993,13 @@ namespace FastBitmapTests
                 }
                 else if (hue < 2 / 3.0f)
                 {
-                    r = 0; 
-                    g = 4 - hue * 6; 
-                    b = hue * 6 - 2; 
+                    r = 0;
+                    g = 4 - hue * 6;
+                    b = hue * 6 - 2;
                 }
                 else
                 {
-                    r = hue * 6 - 4; 
+                    r = hue * 6 - 4;
                     g = 0;
                     b = (1 - hue) * 6;
                 }

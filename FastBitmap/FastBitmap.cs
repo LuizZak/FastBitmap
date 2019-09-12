@@ -55,7 +55,7 @@ namespace FastBitmapLib
         /// The first pixel of the bitmap
         /// </summary>
         private int* _scan0;
-        
+
         /// <summary>
         /// Gets the width of this FastBitmap object
         /// </summary>
@@ -70,7 +70,7 @@ namespace FastBitmapLib
         /// Gets the pointer to the first pixel of the bitmap
         /// </summary>
         public IntPtr Scan0 => _bitmapData.Scan0;
-        
+
         /// <summary>
         /// Gets the stride width (in int32-sized values) of the bitmap
         /// </summary>
@@ -159,7 +159,7 @@ namespace FastBitmapLib
         /// <exception cref="InvalidOperationException">The bitmap is already locked outside this fast bitmap</exception>
         public FastBitmapLocker Lock()
         {
-            return Lock((FastBitmapLockFormat) _bitmap.PixelFormat);
+            return Lock((FastBitmapLockFormat)_bitmap.PixelFormat);
         }
 
         /// <summary>
@@ -180,7 +180,7 @@ namespace FastBitmapLib
                 throw new InvalidOperationException("Unlock must be called before a Lock operation");
             }
 
-            return Lock(ImageLockMode.ReadWrite, (PixelFormat) pixelFormat);
+            return Lock(ImageLockMode.ReadWrite, (PixelFormat)pixelFormat);
         }
 
         /// <summary>
@@ -214,7 +214,7 @@ namespace FastBitmapLib
         {
             // Lock the bitmap's bits
             _bitmapData = _bitmap.LockBits(rect, lockMode, pixelFormat);
-            
+
             _scan0 = (int*)_bitmapData.Scan0;
             Stride = _bitmapData.Stride / BytesPerPixel;
             StrideInBytes = _bitmapData.Stride;
@@ -241,7 +241,7 @@ namespace FastBitmapLib
 
             Locked = false;
         }
-        
+
         /// <summary>
         /// Sets the pixel color at the given coordinates. If the bitmap was not locked beforehands,
         /// an exception is thrown
@@ -760,19 +760,19 @@ namespace FastBitmapLib
 
             return slicedBitmap;
         }
-        
+
         /// <summary>
         /// .NET wrapper to native call of 'memcpy'. Requires Microsoft Visual C++ Runtime installed
         /// </summary>
         [DllImport("msvcrt.dll", EntryPoint = "memcpy", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
         public static extern IntPtr memcpy(IntPtr dest, IntPtr src, ulong count);
-        
+
         /// <summary>
         /// .NET wrapper to native call of 'memcpy'. Requires Microsoft Visual C++ Runtime installed
         /// </summary>
         [DllImport("msvcrt.dll", EntryPoint = "memcpy", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
         public static extern IntPtr memcpy(void* dest, void* src, ulong count);
-        
+
         /// <summary>
         /// .NET wrapper to native call of 'memset'. Requires Microsoft Visual C++ Runtime installed
         /// </summary>

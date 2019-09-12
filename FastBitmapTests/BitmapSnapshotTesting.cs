@@ -40,10 +40,10 @@ namespace FastBitmapTests
         /// If true, when generating output folders for test results, paths are created for each segment of the namespace
         /// of the target test class, e.g. 'PixUI.Controls.LabelControlViewTests' becomes '...\PixUI\Controls\LabelControlViewtests\',
         /// otherwise a single folder with the fully-qualified class name is used instead.
-        /// 
+        ///
         /// If this property is changed across test recordings, the tests must be re-recorded to account for the new directory paths
         /// expected by the snapshot class.
-        /// 
+        ///
         /// Defaults to false.
         /// </summary>
         public static bool SeparateDirectoriesPerNamespace = false;
@@ -78,7 +78,7 @@ namespace FastBitmapTests
                 if(!File.Exists(testFilePath))
                     Assert.Fail($"Could not find reference image file {testFilePath} to compare. Please re-run the test with {nameof(recordMode)} set to true to record a test result to compare later.");
             }
-            
+
             var image = provider.GenerateBitmap(target);
 
             if (recordMode)
@@ -96,7 +96,7 @@ namespace FastBitmapTests
                 using (var actLock = image.FastLock())
                 {
                     bool areEqual = expLock.Width == actLock.Width && expLock.DataArray.SequenceEqual(actLock.DataArray);
-                    
+
                     if (areEqual)
                         return; // Success!
 
@@ -123,7 +123,7 @@ namespace FastBitmapTests
                 }
             }
         }
-        
+
         private static string CombinedTestResultPath([NotNull] string basePath, [NotNull] TestContext context)
         {
             if(!SeparateDirectoriesPerNamespace)
@@ -137,11 +137,11 @@ namespace FastBitmapTests
         private static string TestResultsPath()
         {
             string path = Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory);
-            
-            if(!path.EndsWith("bin\\Debug") && !path.EndsWith("bin\\Release"))
-                Assert.Fail($"Invalid/unrecognized test assembly path {path}: Path must end in either bin\\Debug or bin\\Release");
 
-            path = Path.GetFullPath(Path.Combine(path, "..\\..\\Snapshot\\Files"));
+            //if(!path.EndsWith("bin\\Debug") && !path.EndsWith("bin\\Release"))
+            //    Assert.Fail($"Invalid/unrecognized test assembly path {path}: Path must end in either bin\\Debug or bin\\Release");
+
+            path = Path.GetFullPath(Path.Combine(path, "..\\..\\..\\Snapshot\\Files"));
 
             return path;
         }

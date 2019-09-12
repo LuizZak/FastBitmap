@@ -35,18 +35,18 @@ namespace FastBitmapTests
         /// <summary>
         /// Whether tests are currently under record mode- under record mode, results are recorded on disk to be later
         /// compared when not in record mode.
-        /// 
+        ///
         /// Calls to <see cref="Snapshot"/> always fail with an assertion during record mode.
-        /// 
+        ///
         /// Defaults to false.
         /// </summary>
         public static bool RecordMode = false;
-        
+
         public static void Snapshot([NotNull] Bitmap bitmap, [NotNull] TestContext context)
         {
             BitmapSnapshotTesting.Snapshot<BitmapSnapshot, Bitmap>(bitmap, context, RecordMode);
         }
-        
+
         public Bitmap GenerateBitmap(Bitmap context)
         {
             return context;
