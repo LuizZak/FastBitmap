@@ -519,11 +519,11 @@ namespace FastBitmapLib
                 return;
             }
 
-            var minX = region.X;
-            var maxX = region.X + region.Width;
+            int minX = region.X;
+            int maxX = region.X + region.Width;
 
-            var minY = region.Y;
-            var maxY = region.Y + region.Height;
+            int minY = region.Y;
+            int maxY = region.Y + region.Height;
 
             // Bail out of optimization if there's too few rows to make this worth it
             if (maxY - minY < 16)
@@ -553,7 +553,7 @@ namespace FastBitmapLib
             else
             {
                 // Prepare a horizontal slice of pixels that will be copied over each horizontal row down.
-                int[] row = new int[region.Width];
+                var row = new int[region.Width];
 
                 fixed (int* pRow = row)
                 {
@@ -578,7 +578,7 @@ namespace FastBitmapLib
                         *pSrc++ = color;
                     }
 
-                    int* sx = _scan0 + minX;
+                    var sx = _scan0 + minX;
                     for (int y = minY; y < maxY; y++)
                     {
                         memcpy(sx + y * Stride, pRow, strideWidth);
@@ -785,14 +785,9 @@ namespace FastBitmapLib
         public struct FastBitmapLocker : IDisposable
         {
             /// <summary>
-            /// The fast bitmap instance attached to this locker
-            /// </summary>
-            private readonly FastBitmap _fastBitmap;
-
-            /// <summary>
             /// Gets the fast bitmap instance attached to this locker
             /// </summary>
-            public FastBitmap FastBitmap => _fastBitmap;
+            public FastBitmap FastBitmap { get; }
 
             /// <summary>
             /// Initializes a new instance of the FastBitmapLocker struct with an initial fast bitmap object.
@@ -801,7 +796,7 @@ namespace FastBitmapLib
             /// <param name="fastBitmap">A fast bitmap to attach to this locker which will be released after a call to Dispose</param>
             public FastBitmapLocker(FastBitmap fastBitmap)
             {
-                _fastBitmap = fastBitmap;
+                FastBitmap = fastBitmap;
             }
 
             /// <summary>
@@ -809,8 +804,8 @@ namespace FastBitmapLib
             /// </summary>
             public void Dispose()
             {
-                if (_fastBitmap.Locked)
-                    _fastBitmap.Unlock();
+                if (FastBitmap.Locked)
+                    FastBitmap.Unlock();
             }
         }
     }
