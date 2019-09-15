@@ -27,6 +27,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace FastBitmapLib
@@ -55,7 +56,7 @@ namespace FastBitmapLib
         /// The first pixel of the bitmap
         /// </summary>
         private int* _scan0;
-        
+
         /// <summary>
         /// Gets the width of this FastBitmap object
         /// </summary>
@@ -70,7 +71,7 @@ namespace FastBitmapLib
         /// Gets the pointer to the first pixel of the bitmap
         /// </summary>
         public IntPtr Scan0 => _bitmapData.Scan0;
-        
+
         /// <summary>
         /// Gets the stride width (in int32-sized values) of the bitmap
         /// </summary>
@@ -159,7 +160,7 @@ namespace FastBitmapLib
         /// <exception cref="InvalidOperationException">The bitmap is already locked outside this fast bitmap</exception>
         public FastBitmapLocker Lock()
         {
-            return Lock((FastBitmapLockFormat) _bitmap.PixelFormat);
+            return Lock((FastBitmapLockFormat)_bitmap.PixelFormat);
         }
 
         /// <summary>
@@ -180,7 +181,7 @@ namespace FastBitmapLib
                 throw new InvalidOperationException("Unlock must be called before a Lock operation");
             }
 
-            return Lock(ImageLockMode.ReadWrite, (PixelFormat) pixelFormat);
+            return Lock(ImageLockMode.ReadWrite, (PixelFormat)pixelFormat);
         }
 
         /// <summary>
@@ -214,7 +215,7 @@ namespace FastBitmapLib
         {
             // Lock the bitmap's bits
             _bitmapData = _bitmap.LockBits(rect, lockMode, pixelFormat);
-            
+
             _scan0 = (int*)_bitmapData.Scan0;
             Stride = _bitmapData.Stride / BytesPerPixel;
             StrideInBytes = _bitmapData.Stride;
@@ -241,7 +242,7 @@ namespace FastBitmapLib
 
             Locked = false;
         }
-        
+
         /// <summary>
         /// Sets the pixel color at the given coordinates. If the bitmap was not locked beforehands,
         /// an exception is thrown
@@ -519,11 +520,11 @@ namespace FastBitmapLib
                 return;
             }
 
-            var minX = region.X;
-            var maxX = region.X + region.Width;
+            int minX = region.X;
+            int maxX = region.X + region.Width;
 
-            var minY = region.Y;
-            var maxY = region.Y + region.Height;
+            int minY = region.Y;
+            int maxY = region.Y + region.Height;
 
             // Bail out of optimization if there's too few rows to make this worth it
             if (maxY - minY < 16)
@@ -553,7 +554,7 @@ namespace FastBitmapLib
             else
             {
                 // Prepare a horizontal slice of pixels that will be copied over each horizontal row down.
-                int[] row = new int[region.Width];
+                var row = new int[region.Width];
 
                 fixed (int* pRow = row)
                 {
@@ -578,7 +579,7 @@ namespace FastBitmapLib
                         *pSrc++ = color;
                     }
 
-                    int* sx = _scan0 + minX;
+                    var sx = _scan0 + minX;
                     for (int y = minY; y < maxY; y++)
                     {
                         memcpy(sx + y * Stride, pRow, strideWidth);
@@ -760,24 +761,41 @@ namespace FastBitmapLib
 
             return slicedBitmap;
         }
-        
+
+#if NETSTANDARD
+        public static void memcpy(IntPtr dest, IntPtr src, ulong count)
+        {
+            Buffer.MemoryCopy(src.ToPointer(), dest.ToPointer(), count, count);
+        }
+
+        public static void memcpy(void* dest, void* src, ulong count)
+        {
+            Buffer.MemoryCopy(src, dest, count, count);
+        }
+
+        public static void memset(void* dest, int value, ulong count)
+        {
+            Unsafe.InitBlock(dest, (byte)value, (uint)count);
+        }
+#else
         /// <summary>
         /// .NET wrapper to native call of 'memcpy'. Requires Microsoft Visual C++ Runtime installed
         /// </summary>
         [DllImport("msvcrt.dll", EntryPoint = "memcpy", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
         public static extern IntPtr memcpy(IntPtr dest, IntPtr src, ulong count);
-        
+
         /// <summary>
         /// .NET wrapper to native call of 'memcpy'. Requires Microsoft Visual C++ Runtime installed
         /// </summary>
         [DllImport("msvcrt.dll", EntryPoint = "memcpy", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
         public static extern IntPtr memcpy(void* dest, void* src, ulong count);
-        
+
         /// <summary>
         /// .NET wrapper to native call of 'memset'. Requires Microsoft Visual C++ Runtime installed
         /// </summary>
         [DllImport("msvcrt.dll", EntryPoint = "memset", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
         public static extern IntPtr memset(void* dest, int value, ulong count);
+#endif
 
         /// <summary>
         /// Represents a disposable structure that is returned during Lock() calls, and unlocks the bitmap on Dispose calls
@@ -785,14 +803,9 @@ namespace FastBitmapLib
         public struct FastBitmapLocker : IDisposable
         {
             /// <summary>
-            /// The fast bitmap instance attached to this locker
-            /// </summary>
-            private readonly FastBitmap _fastBitmap;
-
-            /// <summary>
             /// Gets the fast bitmap instance attached to this locker
             /// </summary>
-            public FastBitmap FastBitmap => _fastBitmap;
+            public FastBitmap FastBitmap { get; }
 
             /// <summary>
             /// Initializes a new instance of the FastBitmapLocker struct with an initial fast bitmap object.
@@ -801,7 +814,7 @@ namespace FastBitmapLib
             /// <param name="fastBitmap">A fast bitmap to attach to this locker which will be released after a call to Dispose</param>
             public FastBitmapLocker(FastBitmap fastBitmap)
             {
-                _fastBitmap = fastBitmap;
+                FastBitmap = fastBitmap;
             }
 
             /// <summary>
@@ -809,8 +822,8 @@ namespace FastBitmapLib
             /// </summary>
             public void Dispose()
             {
-                if (_fastBitmap.Locked)
-                    _fastBitmap.Unlock();
+                if (FastBitmap.Locked)
+                    FastBitmap.Unlock();
             }
         }
     }
