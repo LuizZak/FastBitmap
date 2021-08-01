@@ -135,7 +135,7 @@ namespace FastBitmapTests
         [TestMethod]
         public void TestClearBitmap()
         {
-            var bitmap = GenerateRainbowBitmap(63, 63); // Non-dibisible by 8 bitmap, used to test loop unrolling
+            var bitmap = GenerateRainbowBitmap(63, 63); // Non-divisible by 8 bitmap, used to test loop unrolling
             FastBitmap.ClearBitmap(bitmap, Color.Red);
 
             // Loop through the image checking the pixels now
@@ -151,7 +151,7 @@ namespace FastBitmapTests
                 }
             }
 
-            // Test an arbitratry color now
+            // Test an arbitrary color now
             FastBitmap.ClearBitmap(bitmap, Color.FromArgb(25, 12, 0, 42));
 
             // Loop through the image checking the pixels now
@@ -195,7 +195,7 @@ namespace FastBitmapTests
             // fast path that simply mem-sets each row of the target image
 
             {
-                var bitmap = new Bitmap(63, 63); // Non-dibisible by 8 bitmap, used to test loop unrolling
+                var bitmap = new Bitmap(63, 63); // Non-divisible by 8 bitmap, used to test loop unrolling
 
                 FillBitmapRegion(bitmap, new Rectangle(0, 0, 63, 63), Color.Red);
                 
@@ -243,8 +243,8 @@ namespace FastBitmapTests
         [TestMethod]
         public void TestGetPixel()
         {
-            var original = GenerateRainbowBitmap(64, 64);
-            var copy = original.Clone(new Rectangle(0, 0, 64, 64), original.PixelFormat);
+            var original = GenerateRainbowBitmap(12, 12);
+            var copy = original.Clone(new Rectangle(0, 0, 12, 12), original.PixelFormat);
 
             var fastOriginal = new FastBitmap(original);
             fastOriginal.Lock();
@@ -260,6 +260,54 @@ namespace FastBitmapTests
 
             fastOriginal.Unlock();
         }
+        
+        /// <summary>
+        /// Tests the behavior of the GetPixelInt() method by comparing the results from it to the results of the native Bitmap.GetPixel()
+        /// </summary>
+        [TestMethod]
+        public void TestGetPixelInt()
+        {
+            var original = GenerateRainbowBitmap(12, 12);
+            var copy = original.Clone(new Rectangle(0, 0, 12, 12), original.PixelFormat);
+
+            var fastOriginal = new FastBitmap(original);
+            fastOriginal.Lock();
+
+            for (int y = 0; y < original.Height; y++)
+            {
+                for (int x = 0; x < original.Width; x++)
+                {
+                    Assert.AreEqual(fastOriginal.GetPixelInt(x, y), copy.GetPixel(x, y).ToArgb(),
+                        "Calls to FastBitmap.GetPixelInt() must return the same value as returned by Bitmap.GetPixel()");
+                }
+            }
+
+            fastOriginal.Unlock();
+        }
+
+        /// <summary>
+        /// Tests the behavior of the GetPixelUInt() method by comparing the results from it to the results of the native Bitmap.GetPixel()
+        /// </summary>
+        [TestMethod]
+        public void TestGetPixelUInt()
+        {
+            var original = GenerateRainbowBitmap(12, 12);
+            var copy = original.Clone(new Rectangle(0, 0, 12, 12), original.PixelFormat);
+
+            var fastOriginal = new FastBitmap(original);
+            fastOriginal.Lock();
+
+            for (int y = 0; y < original.Height; y++)
+            {
+                for (int x = 0; x < original.Width; x++)
+                {
+                    Assert.AreEqual(fastOriginal.GetPixelUInt(x, y), (uint)copy.GetPixel(x, y).ToArgb(),
+                        "Calls to FastBitmap.GetPixelUInt() must return the same value as returned by Bitmap.GetPixel()");
+                }
+            }
+
+            fastOriginal.Unlock();
+        }
 
         /// <summary>
         /// Tests the behavior of the SetPixel() method by randomly filling two bitmaps via native SetPixel and the implemented SetPixel, then comparing the output similarity
@@ -267,8 +315,8 @@ namespace FastBitmapTests
         [TestMethod]
         public void TestSetPixel()
         {
-            var bitmap1 = new Bitmap(64, 64);
-            var bitmap2 = new Bitmap(64, 64);
+            var bitmap1 = new Bitmap(12, 12);
+            var bitmap2 = new Bitmap(12, 12);
 
             var fastBitmap1 = new FastBitmap(bitmap1);
             fastBitmap1.Lock();
@@ -299,8 +347,8 @@ namespace FastBitmapTests
         [TestMethod]
         public void TestSetPixelInt()
         {
-            var bitmap1 = new Bitmap(64, 64);
-            var bitmap2 = new Bitmap(64, 64);
+            var bitmap1 = new Bitmap(12, 12);
+            var bitmap2 = new Bitmap(12, 12);
 
             var fastBitmap1 = new FastBitmap(bitmap1);
             fastBitmap1.Lock();
@@ -315,6 +363,38 @@ namespace FastBitmapTests
                     var color = Color.FromArgb(intColor);
 
                     fastBitmap1.SetPixel(x, y, intColor);
+                    bitmap2.SetPixel(x, y, color);
+                }
+            }
+
+            fastBitmap1.Unlock();
+
+            AssertBitmapEquals(bitmap1, bitmap2,
+                "Calls to FastBitmap.SetPixel() with an integer overload must be equivalent to calls to Bitmap.SetPixel() with a Color with the same ARGB value as the interger");
+        }
+
+        /// <summary>
+        /// Tests the behavior of the SetPixel() unsigned integer overload method by randomly filling two bitmaps via native SetPixel and the implemented SetPixel, then comparing the output similarity
+        /// </summary>
+        [TestMethod]
+        public void TestSetPixelUInt()
+        {
+            var bitmap1 = new Bitmap(12, 12);
+            var bitmap2 = new Bitmap(12, 12);
+
+            var fastBitmap1 = new FastBitmap(bitmap1);
+            fastBitmap1.Lock();
+
+            var r = new Random();
+
+            for (int y = 0; y < bitmap1.Height; y++)
+            {
+                for (int x = 0; x < bitmap1.Width; x++)
+                {
+                    uint uintColor = (uint)r.Next(0xFFFFFF);
+                    var color = Color.FromArgb((int)uintColor);
+
+                    fastBitmap1.SetPixel(x, y, uintColor);
                     bitmap2.SetPixel(x, y, color);
                 }
             }
@@ -556,6 +636,26 @@ namespace FastBitmapTests
             Assert.IsFalse(fastBitmap.Locked, "After accessing the .Data property on a fast bitmap previously unlocked, the .Locked property must be false");
 
             var pixels = fastBitmap.DataArray;
+
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    Assert.AreEqual(bitmap.GetPixel(x, y).ToArgb(), pixels[y * bitmap.Width + x], "");
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestGetDataAsArray()
+        {
+            // TODO: Devise a way to test the returned array in a more consistent way, because currently this test only deals with ARGB pixel values because Bitmap.GetPixel().ToArgb() only returns 0xAARRGGBB format values
+            var bitmap = GenerateRainbowBitmap(64, 64);
+            var fastBitmap = new FastBitmap(bitmap);
+
+            Assert.IsFalse(fastBitmap.Locked, "After accessing the .Data property on a fast bitmap previously unlocked, the .Locked property must be false");
+
+            var pixels = fastBitmap.GetDataAsArray();
 
             for (int y = 0; y < bitmap.Height; y++)
             {

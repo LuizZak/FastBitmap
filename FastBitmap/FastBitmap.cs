@@ -88,10 +88,11 @@ namespace FastBitmapLib
         public bool Locked { get; private set; }
 
         /// <summary>
-        /// Gets an array of 32-bit color pixel values that represent this FastBitmap
+        /// Gets an array of 32-bit color pixel values that represent this FastBitmap.
         /// </summary>
         /// <exception cref="Exception">The locking operation required to extract the values off from the underlying bitmap failed</exception>
         /// <exception cref="InvalidOperationException">The bitmap is already locked outside this fast bitmap</exception>
+        [Obsolete("DataArray property is deprecated. Please use GetDataAsArray() method instead.")]
         public int[] DataArray
         {
             get
@@ -244,7 +245,7 @@ namespace FastBitmapLib
         }
 
         /// <summary>
-        /// Sets the pixel color at the given coordinates. If the bitmap was not locked beforehands,
+        /// Sets the pixel color at the given coordinates. If the bitmap was not locked beforehand,
         /// an exception is thrown
         /// </summary>
         /// <param name="x">The X coordinate of the pixel to set</param>
@@ -258,7 +259,7 @@ namespace FastBitmapLib
         }
 
         /// <summary>
-        /// Sets the pixel color at the given coordinates. If the bitmap was not locked beforehands,
+        /// Sets the pixel color at the given coordinates. If the bitmap was not locked beforehand,
         /// an exception is thrown
         /// </summary>
         /// <param name="x">The X coordinate of the pixel to set</param>
@@ -272,7 +273,7 @@ namespace FastBitmapLib
         }
 
         /// <summary>
-        /// Sets the pixel color at the given coordinates. If the bitmap was not locked beforehands,
+        /// Sets the pixel color at the given coordinates. If the bitmap was not locked beforehand,
         /// an exception is thrown
         /// </summary>
         /// <param name="x">The X coordinate of the pixel to set</param>
@@ -300,7 +301,7 @@ namespace FastBitmapLib
         }
 
         /// <summary>
-        /// Gets the pixel color at the given coordinates. If the bitmap was not locked beforehands,
+        /// Gets the pixel color at the given coordinates. If the bitmap was not locked beforehand,
         /// an exception is thrown
         /// </summary>
         /// <param name="x">The X coordinate of the pixel to get</param>
@@ -314,7 +315,7 @@ namespace FastBitmapLib
 
         /// <summary>
         /// Gets the pixel color at the given coordinates as an integer value. If the bitmap
-        /// was not locked beforehands, an exception is thrown
+        /// was not locked beforehand, an exception is thrown
         /// </summary>
         /// <param name="x">The X coordinate of the pixel to get</param>
         /// <param name="y">The Y coordinate of the pixel to get</param>
@@ -341,7 +342,7 @@ namespace FastBitmapLib
 
         /// <summary>
         /// Gets the pixel color at the given coordinates as an unsigned integer value.
-        /// If the bitmap was not locked beforehands, an exception is thrown
+        /// If the bitmap was not locked beforehand, an exception is thrown
         /// </summary>
         /// <param name="x">The X coordinate of the pixel to get</param>
         /// <param name="y">The Y coordinate of the pixel to get</param>
@@ -426,7 +427,36 @@ namespace FastBitmapLib
                 }
             }
         }
+        
+        /// <summary>
+        /// Gets an array of 32-bit color pixel values that represent this FastBitmap.
+        /// </summary>
+        /// <exception cref="Exception">The locking operation required to extract the values off from the underlying bitmap failed</exception>
+        /// <exception cref="InvalidOperationException">The bitmap is already locked outside this fast bitmap</exception>
+        public int[] GetDataAsArray()
+        {
+            bool unlockAfter = false;
+            if (!Locked)
+            {
+                Lock();
+                unlockAfter = true;
+            }
 
+            // Declare an array to hold the bytes of the bitmap
+            int bytes = Math.Abs(_bitmapData.Stride) * _bitmap.Height;
+            int[] argbValues = new int[bytes / BytesPerPixel];
+
+            // Copy the RGB values into the array
+            Marshal.Copy(_bitmapData.Scan0, argbValues, 0, bytes / BytesPerPixel);
+
+            if (unlockAfter)
+            {
+                Unlock();
+            }
+
+            return argbValues;
+        }
+        
         /// <summary>
         /// Clears the bitmap with the given color
         /// </summary>
@@ -800,7 +830,7 @@ namespace FastBitmapLib
         /// <summary>
         /// Represents a disposable structure that is returned during Lock() calls, and unlocks the bitmap on Dispose calls
         /// </summary>
-        public struct FastBitmapLocker : IDisposable
+        public readonly struct FastBitmapLocker : IDisposable
         {
             /// <summary>
             /// Gets the fast bitmap instance attached to this locker
