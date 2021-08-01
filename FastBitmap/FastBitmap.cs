@@ -301,6 +301,29 @@ namespace FastBitmapLib
         }
 
         /// <summary>
+        /// Sets the pixel color at the given index. If the bitmap was not locked beforehand,
+        /// an exception is thrown
+        /// </summary>
+        /// <param name="index">An index into the underlying bitmap data, between <c>0 &lt;= index &lt; Height * Stride</c></param>
+        /// <param name="color">The new color of the pixel to set</param>
+        /// <exception cref="InvalidOperationException">The fast bitmap is not locked</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The provided index is out of bounds of the bitmap</exception>
+        public void SetPixel(int index, uint color)
+        {
+            if (!Locked)
+            {
+                throw new InvalidOperationException("The FastBitmap must be locked before any pixel operations are made");
+            }
+
+            if (index < 0 || index >= Height * Stride)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), $@"The index must be >= 0 and < {nameof(Height)} * {nameof(Stride)}");
+            }
+
+            *(uint*)(_scan0 + index) = color;
+        }
+
+        /// <summary>
         /// Gets the pixel color at the given coordinates. If the bitmap was not locked beforehand,
         /// an exception is thrown
         /// </summary>
@@ -365,6 +388,30 @@ namespace FastBitmapLib
             }
 
             return *((uint*)_scan0 + x + y * Stride);
+        }
+
+        /// <summary>
+        /// Gets the pixel color at a given absolute index on the underlying bitmap data as
+        /// an unsigned integer value.
+        ///
+        /// If the bitmap was not locked beforehand, an exception is thrown
+        /// </summary>
+        /// <param name="index">An index into the underlying bitmap data, between <c>0 &lt;= index &lt; Height * Stride</c></param>
+        /// <exception cref="InvalidOperationException">The fast bitmap is not locked</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The provided index is out of bounds of the bitmap data</exception>
+        public uint GetPixelUInt(int index)
+        {
+            if (!Locked)
+            {
+                throw new InvalidOperationException("The FastBitmap must be locked before any pixel operations are made");
+            }
+
+            if (index < 0 || index >= Height * Stride)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), $@"The index must be >= 0 and < {nameof(Height)} * {nameof(Stride)}");
+            }
+
+            return *((uint*)_scan0 + index);
         }
 
         /// <summary>

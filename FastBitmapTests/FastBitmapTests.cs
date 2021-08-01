@@ -59,7 +59,7 @@ namespace FastBitmapTests
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentException),
-            "Providing a bitmap with a bitdepth different than 32bpp to a FastBitmap must return an ArgumentException")]
+            "Providing a bitmap with a bit-depth different than 32bpp to a FastBitmap must return an ArgumentException")]
         public void TestFastBitmapCreation()
         {
             var bitmap = new Bitmap(64, 64);
@@ -238,7 +238,7 @@ namespace FastBitmapTests
         }
 
         /// <summary>
-        /// Tests the behavior of the GetPixel() method by comparing the results from it to the results of the native Bitmap.GetPixel()
+        /// Tests the behavior of the GetPixel(x, y) method by comparing the results from it to the results of the native Bitmap.GetPixel()
         /// </summary>
         [TestMethod]
         public void TestGetPixel()
@@ -262,7 +262,7 @@ namespace FastBitmapTests
         }
         
         /// <summary>
-        /// Tests the behavior of the GetPixelInt() method by comparing the results from it to the results of the native Bitmap.GetPixel()
+        /// Tests the behavior of the GetPixelInt(x, y) method by comparing the results from it to the results of the native Bitmap.GetPixel()
         /// </summary>
         [TestMethod]
         public void TestGetPixelInt()
@@ -286,7 +286,7 @@ namespace FastBitmapTests
         }
 
         /// <summary>
-        /// Tests the behavior of the GetPixelUInt() method by comparing the results from it to the results of the native Bitmap.GetPixel()
+        /// Tests the behavior of the GetPixelUInt(x, y) method by comparing the results from it to the results of the native Bitmap.GetPixel()
         /// </summary>
         [TestMethod]
         public void TestGetPixelUInt()
@@ -302,6 +302,30 @@ namespace FastBitmapTests
                 for (int x = 0; x < original.Width; x++)
                 {
                     Assert.AreEqual(fastOriginal.GetPixelUInt(x, y), (uint)copy.GetPixel(x, y).ToArgb(),
+                        "Calls to FastBitmap.GetPixelUInt() must return the same value as returned by Bitmap.GetPixel()");
+                }
+            }
+
+            fastOriginal.Unlock();
+        }
+
+        /// <summary>
+        /// Tests the behavior of the GetPixelUInt(index) method by comparing the results from it to the results of the native Bitmap.GetPixel()
+        /// </summary>
+        [TestMethod]
+        public void TestGetPixelUIntIndex()
+        {
+            var original = GenerateRainbowBitmap(12, 12);
+            var copy = original.Clone(new Rectangle(0, 0, 12, 12), original.PixelFormat);
+
+            var fastOriginal = new FastBitmap(original);
+            fastOriginal.Lock();
+
+            for (int y = 0; y < original.Height; y++)
+            {
+                for (int x = 0; x < original.Width; x++)
+                {
+                    Assert.AreEqual(fastOriginal.GetPixelUInt(x + y * fastOriginal.Height), (uint)copy.GetPixel(x, y).ToArgb(),
                         "Calls to FastBitmap.GetPixelUInt() must return the same value as returned by Bitmap.GetPixel()");
                 }
             }
@@ -395,6 +419,38 @@ namespace FastBitmapTests
                     var color = Color.FromArgb((int)uintColor);
 
                     fastBitmap1.SetPixel(x, y, uintColor);
+                    bitmap2.SetPixel(x, y, color);
+                }
+            }
+
+            fastBitmap1.Unlock();
+
+            AssertBitmapEquals(bitmap1, bitmap2,
+                "Calls to FastBitmap.SetPixel() with an integer overload must be equivalent to calls to Bitmap.SetPixel() with a Color with the same ARGB value as the interger");
+        }
+
+        /// <summary>
+        /// Tests the behavior of the SetPixel() indexed unsigned integer overload method by randomly filling two bitmaps via native SetPixel and the implemented SetPixel, then comparing the output similarity
+        /// </summary>
+        [TestMethod]
+        public void TestSetPixelUIntIndex()
+        {
+            var bitmap1 = new Bitmap(12, 12);
+            var bitmap2 = new Bitmap(12, 12);
+
+            var fastBitmap1 = new FastBitmap(bitmap1);
+            fastBitmap1.Lock();
+
+            var r = new Random();
+
+            for (int y = 0; y < bitmap1.Height; y++)
+            {
+                for (int x = 0; x < bitmap1.Width; x++)
+                {
+                    uint uintColor = (uint)r.Next(0xFFFFFF);
+                    var color = Color.FromArgb((int)uintColor);
+
+                    fastBitmap1.SetPixel(x + y * fastBitmap1.Height, uintColor);
                     bitmap2.SetPixel(x, y, color);
                 }
             }
@@ -911,7 +967,7 @@ namespace FastBitmapTests
         [TestMethod]
         [ExpectedException(typeof(InvalidOperationException),
             "When trying to unlock a FastBitmap that is not locked, an exception must be thrown")]
-        public void TestFastBitmapUnlockingException()
+        public void TestUnlockWhileUnlockedException()
         {
             var bitmap = new Bitmap(64, 64);
             var fastBitmap = new FastBitmap(bitmap);
@@ -922,7 +978,7 @@ namespace FastBitmapTests
         [TestMethod]
         [ExpectedException(typeof(InvalidOperationException),
             "When trying to lock a FastBitmap that is already locked, an exception must be thrown")]
-        public void TestFastBitmapLockingException()
+        public void TestLockWhileLockedException()
         {
             var bitmap = new Bitmap(64, 64);
             var fastBitmap = new FastBitmap(bitmap);
@@ -933,9 +989,9 @@ namespace FastBitmapTests
 
         [TestMethod]
         [ExpectedException(typeof(InvalidOperationException),
-            "When trying to read or write to the FastBitmap via GetPixel while it is unlocked, an exception must be thrown"
+            "When trying to read or write to the FastBitmap via GetPixel(x, y) while it is unlocked, an exception must be thrown"
             )]
-        public void TestFastBitmapUnlockedGetAccessException()
+        public void TestGetPixelUnlockedException()
         {
             var bitmap = new Bitmap(64, 64);
             var fastBitmap = new FastBitmap(bitmap);
@@ -945,9 +1001,45 @@ namespace FastBitmapTests
 
         [TestMethod]
         [ExpectedException(typeof(InvalidOperationException),
-            "When trying to read or write to the FastBitmap via SetPixel while it is unlocked, an exception must be thrown"
+            "When trying to read or write to the FastBitmap via GetPixelInt(x, y) while it is unlocked, an exception must be thrown"
+        )]
+        public void TestGetPixelIntUnlockedException()
+        {
+            var bitmap = new Bitmap(64, 64);
+            var fastBitmap = new FastBitmap(bitmap);
+
+            fastBitmap.GetPixelInt(0, 0);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException),
+            "When trying to read or write to the FastBitmap via GetPixelUInt(x, y) while it is unlocked, an exception must be thrown"
+        )]
+        public void TestGetPixelUIntUnlockedException()
+        {
+            var bitmap = new Bitmap(64, 64);
+            var fastBitmap = new FastBitmap(bitmap);
+
+            fastBitmap.GetPixelUInt(0, 0);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException),
+            "When trying to read or write to the FastBitmap via GetPixelUInt(index) while it is unlocked, an exception must be thrown"
+        )]
+        public void TestGetPixelUIntIndexUnlockedException()
+        {
+            var bitmap = new Bitmap(64, 64);
+            var fastBitmap = new FastBitmap(bitmap);
+
+            fastBitmap.GetPixelUInt(0);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException),
+            "When trying to read or write to the FastBitmap via SetPixel(x, y) while it is unlocked, an exception must be thrown"
             )]
-        public void TestFastBitmapUnlockedSetAccessException()
+        public void TestSetPixelUnlockedException()
         {
             var bitmap = new Bitmap(64, 64);
             var fastBitmap = new FastBitmap(bitmap);
@@ -956,7 +1048,19 @@ namespace FastBitmapTests
         }
 
         [TestMethod]
-        public void TestFastBitmapGetPixelBoundsException()
+        [ExpectedException(typeof(InvalidOperationException),
+            "When trying to read or write to the FastBitmap via SetPixel(index) while it is unlocked, an exception must be thrown"
+        )]
+        public void TestSetPixelIndexUnlockedException()
+        {
+            var bitmap = new Bitmap(64, 64);
+            var fastBitmap = new FastBitmap(bitmap);
+
+            fastBitmap.SetPixel(0, 0);
+        }
+
+        [TestMethod]
+        public void TestGetPixelBoundsException()
         {
             var bitmap = new Bitmap(64, 64);
             var fastBitmap = new FastBitmap(bitmap);
@@ -966,21 +1070,21 @@ namespace FastBitmapTests
             try
             {
                 fastBitmap.GetPixel(-1, -1);
-                Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixel, an exception must be thrown");
+                Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixel(x, y), an exception must be thrown");
             }
             catch (ArgumentOutOfRangeException) { }
 
             try
             {
                 fastBitmap.GetPixel(fastBitmap.Width, 0);
-                Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixel, an exception must be thrown");
+                Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixel(x, y), an exception must be thrown");
             }
             catch (ArgumentOutOfRangeException) { }
 
             try
             {
                 fastBitmap.GetPixel(0, fastBitmap.Height);
-                Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixel, an exception must be thrown");
+                Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixel(x, y), an exception must be thrown");
             }
             catch (ArgumentOutOfRangeException) { }
 
@@ -988,7 +1092,96 @@ namespace FastBitmapTests
         }
 
         [TestMethod]
-        public void TestFastBitmapSetPixelBoundsException()
+        public void TestGetPixelIntBoundsException()
+        {
+            var bitmap = new Bitmap(64, 64);
+            var fastBitmap = new FastBitmap(bitmap);
+
+            fastBitmap.Lock();
+
+            try
+            {
+                fastBitmap.GetPixelInt(-1, -1);
+                Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixelInt(x, y), an exception must be thrown");
+            }
+            catch (ArgumentOutOfRangeException) { }
+
+            try
+            {
+                fastBitmap.GetPixelInt(fastBitmap.Width, 0);
+                Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixelInt(x, y), an exception must be thrown");
+            }
+            catch (ArgumentOutOfRangeException) { }
+
+            try
+            {
+                fastBitmap.GetPixelInt(0, fastBitmap.Height);
+                Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixelInt(x, y), an exception must be thrown");
+            }
+            catch (ArgumentOutOfRangeException) { }
+
+            fastBitmap.GetPixelInt(fastBitmap.Width - 1, fastBitmap.Height - 1);
+        }
+
+        [TestMethod]
+        public void TestGetPixelUIntBoundsException()
+        {
+            var bitmap = new Bitmap(64, 64);
+            var fastBitmap = new FastBitmap(bitmap);
+
+            fastBitmap.Lock();
+
+            try
+            {
+                fastBitmap.GetPixelUInt(-1, -1);
+                Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixelUInt(x, y), an exception must be thrown");
+            }
+            catch (ArgumentOutOfRangeException) { }
+
+            try
+            {
+                fastBitmap.GetPixelUInt(fastBitmap.Width, 0);
+                Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixelUInt(x, y), an exception must be thrown");
+            }
+            catch (ArgumentOutOfRangeException) { }
+
+            try
+            {
+                fastBitmap.GetPixelUInt(0, fastBitmap.Height);
+                Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixelUInt(x, y), an exception must be thrown");
+            }
+            catch (ArgumentOutOfRangeException) { }
+
+            fastBitmap.GetPixelUInt(fastBitmap.Width - 1, fastBitmap.Height - 1);
+        }
+
+        [TestMethod]
+        public void TestGetPixelUIntIndexBoundsException()
+        {
+            var bitmap = new Bitmap(64, 64);
+            var fastBitmap = new FastBitmap(bitmap);
+
+            fastBitmap.Lock();
+
+            try
+            {
+                fastBitmap.GetPixelUInt(-1);
+                Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixelUInt(index), an exception must be thrown");
+            }
+            catch (ArgumentOutOfRangeException) { }
+
+            try
+            {
+                fastBitmap.GetPixelUInt(fastBitmap.Height * fastBitmap.Stride);
+                Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixelUInt(index), an exception must be thrown");
+            }
+            catch (ArgumentOutOfRangeException) { }
+            
+            fastBitmap.GetPixelUInt(fastBitmap.Height * fastBitmap.Stride - 1);
+        }
+
+        [TestMethod]
+        public void TestSetPixelBoundsException()
         {
             var bitmap = new Bitmap(64, 64);
             var fastBitmap = new FastBitmap(bitmap);
@@ -998,25 +1191,33 @@ namespace FastBitmapTests
             try
             {
                 fastBitmap.SetPixel(-1, -1, 0);
-                Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixel, an exception must be thrown");
+                Assert.Fail("When trying to access a coordinate that is out of bounds via SetPixel, an exception must be thrown");
             }
             catch (ArgumentOutOfRangeException) { }
 
             try
             {
                 fastBitmap.SetPixel(fastBitmap.Width, 0, 0);
-                Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixel, an exception must be thrown");
+                Assert.Fail("When trying to access a coordinate that is out of bounds via SetPixel, an exception must be thrown");
             }
             catch (ArgumentOutOfRangeException) { }
 
             try
             {
                 fastBitmap.SetPixel(0, fastBitmap.Height, 0);
-                Assert.Fail("When trying to access a coordinate that is out of bounds via GetPixel, an exception must be thrown");
+                Assert.Fail("When trying to access a coordinate that is out of bounds via SetPixel, an exception must be thrown");
+            }
+            catch (ArgumentOutOfRangeException) { }
+
+            try
+            {
+                fastBitmap.SetPixel(fastBitmap.Height * fastBitmap.Stride, 0);
+                Assert.Fail("When trying to access a coordinate that is out of bounds via SetPixel, an exception must be thrown");
             }
             catch (ArgumentOutOfRangeException) { }
 
             fastBitmap.SetPixel(fastBitmap.Width - 1, fastBitmap.Height - 1, 0);
+            fastBitmap.SetPixel(fastBitmap.Height * fastBitmap.Stride - 1, 0);
         }
 
         [TestMethod]
